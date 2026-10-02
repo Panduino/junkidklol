@@ -1,4 +1,12 @@
 return function(mod)
+  mod.options:define({
+    { key = "debug_ticket_events", label = "DEBUG TICKET EVENTS", type = "toggle", default = false },
+  })
+
+  local function debugTicketEvents()
+    return mod.options:get("debug_ticket_events") == true
+  end
+
   if mod.generation ~= 3 then return end
 
   local REQUIRED = {
@@ -804,10 +812,12 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
     local auroraTicketBusy = false
 
     local function hasRayquaza(session)
+      if debugTicketEvents() then return true end
       return session and session.dex and Dex.isCaught(session.dex, 384) == true
     end
 
     local function hasLegendarySet(session)
+      if debugTicketEvents() then return true end
       if not session or not session.dex then return false end
       for _, species in ipairs(LEGENDARY_UNLOCK) do
         if not Dex.isCaught(session.dex, species) then return false end
@@ -1007,6 +1017,23 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       session.modData = session.modData or {}
       session.modData[mod.id] = session.modData[mod.id] or {}
       return session.modData[mod.id]
+    end
+
+    local function enableTicketDebugTravel(session)
+      if not debugTicketEvents() or not session then return end
+      local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
+      local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
+      if not okSpace or not okFlags or not Space or not Flags or not Space.store then return end
+      local ctx = Space.vm and Space.vm.ctx or nil
+      -- Only open the normal Sevii ferry path needed to exercise the two
+      -- ticket events from an unfinished save. Catch flags stay untouched.
+      Flags.setFlag(Space.store, ctx, 0x71, true)
+      Flags.setFlag(Space.store, ctx, 0x72, true)
+      Flags.setFlag(Space.store, ctx, 0x2DC, true)
+      Flags.setFlag(Space.store, ctx, 0x2DD, true)
+      Flags.setFlag(Space.store, ctx, 0x844, true)
+      Flags.setVar(Space.store, ctx, VAR_MAP_SCENE_VERMILION_CITY, 3)
+      Flags.setVar(Space.store, ctx, VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 6)
     end
 
     local function tryMysticTicketEvent()
@@ -1303,6 +1330,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
     mod.events:on("map.entered", function(ev)
       refreshPeriod()
       showTowerDarkrai()
+      enableTicketDebugTravel(engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession())
       tryMysticTicketEvent()
       tryAuroraTicketEvent()
     end)
