@@ -885,6 +885,13 @@ local FLAG_GOT_RUBY = 0x2DD
             end
             MysteryGift.setFlag(session, FLAG_ENABLE_SHIP_NAVEL_ROCK, true)
             MysteryGift.setFlag(session, FLAG_RECEIVED_MYSTIC_TICKET, true)
+            local okSpace2, Space2 = pcall(require, "src.core.game3.scripting.space")
+            local okFlags2, Flags2 = pcall(require, "src.core.game3.scripting.flags")
+            if okSpace2 and okFlags2 and Space2 and Flags2 and Space2.store then
+              local ctx2 = Space2.vm and Space2.vm.ctx or nil
+              Flags2.setFlag(Space2.store, ctx2, FLAG_ENABLE_SHIP_NAVEL_ROCK, true)
+              Flags2.setFlag(Space2.store, ctx2, FLAG_RECEIVED_MYSTIC_TICKET, true)
+            end
             state.mysticTicketGiven = true
             Message.show("{PLAYER} received the MYSTICTICKET!", function()
               Message.show("I've never seen a destination like this before...", function()
