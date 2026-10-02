@@ -553,6 +553,155 @@ return function(mod)
       engine._groupedRoamerOWEInstalled = true
     end
 
+    -- Fossil Dealer: a separate NPC in Kanto/Sevii Poké Marts after Mt. Moon.
+    -- FireRed already supplies Helix, Dome, and Old Amber, so he only carries
+    -- the Hoenn/Sinnoh fossils that otherwise have no normal FRLG source.
+    local ItemsData = require("src.core.game3.items_data")
+    local Objects = require("src.core.game3.objects")
+    local Field = require("src.core.game3.field")
+    local Player = require("src.core.game3.player")
+    local ShopMenu = require("src.ui.game3.shop_menu")
+    local Message = require("src.ui.game3.message")
+    local GfxIds = require("src.core.game3.scripting.gfx_ids")
+
+    local FOSSIL_DEALER_ID = 125
+    local FOSSIL_PRICE = 3000
+    local ROOT_FOSSIL, CLAW_FOSSIL = 286, 287
+    local SKULL_FOSSIL, ARMOR_FOSSIL = "SKULL_FOSSIL", "ARMOR_FOSSIL"
+
+    local FOSSIL_MARTS = {
+      FR_CERULEAN_CITY_MART=true,
+      FR_VERMILION_CITY_MART=true,
+      FR_LAVENDER_TOWN_MART=true,
+      FR_SAFFRON_CITY_MART=true,
+      FR_FUCHSIA_CITY_MART=true,
+      FR_CINNABAR_ISLAND_MART=true,
+      FR_THREE_ISLAND_MART=true,
+      FR_FOUR_ISLAND_MART=true,
+      FR_SIX_ISLAND_MART=true,
+      FR_SEVEN_ISLAND_MART=true,
+    }
+
+    local rawItemInfo = ItemsData.info
+    if not ItemsData._fossilDealerItemsInstalled then
+      ItemsData.info = function(id)
+        if id == SKULL_FOSSIL then
+          return { id=id, name="SKULL FOSSIL", pocket="ITEMS", fieldUse="none",
+            price=FOSSIL_PRICE, description="A fossil from a prehistoric POKEMON." }
+        elseif id == ARMOR_FOSSIL then
+          return { id=id, name="ARMOR FOSSIL", pocket="ITEMS", fieldUse="none",
+            price=FOSSIL_PRICE, description="A fossil from a prehistoric POKEMON." }
+        end
+        local info = rawItemInfo(id)
+        if info and (tonumber(id) == ROOT_FOSSIL or tonumber(id) == CLAW_FOSSIL) then
+          local copy = {}
+          for k, v in pairs(info) do copy[k] = v end
+          copy.price = FOSSIL_PRICE
+          return copy
+        end
+        return info
+      end
+      ItemsData._fossilDealerItemsInstalled = true
+    end
+
+    local function badgeCount(session)
+      local n = 0
+      local flags = session and session.flags or {}
+      for id = 0x820, 0x827 do
+        if flags[id] == true or flags[tostring(id)] == true
+          or flags[string.format("0x%X", id)] == true then
+          n = n + 1
+        end
+      end
+      return n
+    end
+
+    local function fossilStock(session)
+      local badges = badgeCount(session)
+      local stock = {}
+      if badges >= 1 then stock[#stock + 1] = ROOT_FOSSIL end
+      if badges >= 3 then stock[#stock + 1] = CLAW_FOSSIL end
+      if badges >= 5 then stock[#stock + 1] = SKULL_FOSSIL end
+      if badges >= 7 then stock[#stock + 1] = ARMOR_FOSSIL end
+      return stock
+    end
+
+    local function dealerMap(session)
+      return session and FOSSIL_MARTS[session.map] == true and badgeCount(session) >= 1
+    end
+
+    local function removeFossilDealer()
+      if Objects._byId and Objects._byId[FOSSIL_DEALER_ID] then
+        Objects._byId[FOSSIL_DEALER_ID] = nil
+        for i = #(Objects._order or {}), 1, -1 do
+          if Objects._order[i] == FOSSIL_DEALER_ID then table.remove(Objects._order, i) end
+        end
+      end
+    end
+
+    local function placeFossilDealer()
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      removeFossilDealer()
+      if not dealerMap(session) then return end
+      if not Objects._byId or not Objects._order then return end
+
+      -- Bottom-right side of the standard Mart floor keeps him away from the
+      -- clerk, questionnaire counter, shelves, entrance, and normal customers.
+      local x, y = 12, 7
+      if Objects.at and Objects.at(x, y) then
+        x, y = 11, 7
+        if Objects.at(x, y) then x, y = 12, 6 end
+      end
+
+      local eo = {
+        localId=FOSSIL_DEALER_ID, originLocalId=FOSSIL_DEALER_ID,
+        originMapId=session.map, cellX=x, cellY=y, px=x*16, py=y*16,
+        homeX=x, homeY=y, targetX=x, targetY=y,
+        facing="left", sprite=GfxIds.spriteFor(61), graphicsId=61,
+        elevation=3, currentElevation=3, movementType=0x09,
+        movement="STAY", range="LEFT", radius={x=0,y=0}, rangeX=0, rangeY=0,
+        visible=true, hidden=false, invisible=false, frozen=false,
+        passable=false, moving=false, progress=0, stepFrames=16,
+        scriptBusy=false, def={ localId=FOSSIL_DEALER_ID, x=x, y=y,
+          graphicsId=61, movementType=0x09, facing="left" },
+      }
+      Objects._byId[FOSSIL_DEALER_ID] = eo
+      Objects._order[#Objects._order + 1] = FOSSIL_DEALER_ID
+    end
+
+    local rawFieldInteract = Field.interact
+    if not Field._fossilDealerInteractInstalled then
+      Field.interact = function(game)
+        local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+        local dealer = Objects._byId and Objects._byId[FOSSIL_DEALER_ID]
+        if dealer and dealerMap(session) and not Field.isLocked() then
+          local dx, dy = 0, 0
+          local face = Player.facing
+          if face == "up" then dy=-1 elseif face == "down" then dy=1
+          elseif face == "left" then dx=-1 elseif face == "right" then dx=1 end
+          if Player.cellX + dx == dealer.cellX and Player.cellY + dy == dealer.cellY then
+            local opposite = {up="down",down="up",left="right",right="left"}
+            dealer.facing = opposite[face] or dealer.facing
+            Field.lock("fossil_dealer")
+            Message.show("FOSSIL DEALER: Looking for something ancient?", function()
+              ShopMenu.show({
+                items=fossilStock(session),
+                session=session,
+                onClose=function() Field.unlock("fossil_dealer") end,
+              })
+            end)
+            return true
+          end
+        end
+        return rawFieldInteract(game)
+      end
+      Field._fossilDealerInteractInstalled = true
+    end
+
+    mod.events:on("map.entered", function()
+      placeFossilDealer()
+    end)
+
     local DARKRAI_NAT = 491
     local DARKRAI_SPECIES = DARKRAI_NAT + 64
     local TOWER_7F = "FR_POKEMON_TOWER_7F"
