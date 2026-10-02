@@ -566,7 +566,7 @@ return function(mod)
 
     local FOSSIL_DEALER_ID = 125
     local FOSSIL_PRICE = 3000
-    local ROOT_FOSSIL, CLAW_FOSSIL = 286, 287
+    local ROOT_FOSSIL, CLAW_FOSSIL = 286, 287\n    local HELIX_FOSSIL, DOME_FOSSIL = 357, 358
     local SKULL_FOSSIL, ARMOR_FOSSIL = "SKULL_FOSSIL", "ARMOR_FOSSIL"
 
     local FOSSIL_MARTS = {
@@ -593,7 +593,7 @@ return function(mod)
             price=FOSSIL_PRICE, description="A fossil from a prehistoric POKEMON." }
         end
         local info = rawItemInfo(id)
-        if info and (tonumber(id) == ROOT_FOSSIL or tonumber(id) == CLAW_FOSSIL) then
+        if info and (tonumber(id) == ROOT_FOSSIL or tonumber(id) == CLAW_FOSSIL\n          or tonumber(id) == HELIX_FOSSIL or tonumber(id) == DOME_FOSSIL) then
           local copy = {}
           for k, v in pairs(info) do copy[k] = v end
           copy.price = FOSSIL_PRICE
@@ -669,10 +669,91 @@ return function(mod)
       Objects._order[#Objects._order + 1] = FOSSIL_DEALER_ID
     end
 
+    local LAB_EXPERIMENT_ROOM = "FR_CINNABAR_ISLAND_POKEMON_LAB_EXPERIMENT_ROOM"
+    local EXTRA_FOSSILS = {
+      [ROOT_FOSSIL] = { name="ROOT FOSSIL", species=345, pokemon="LILEEP" },
+      [CLAW_FOSSIL] = { name="CLAW FOSSIL", species=347, pokemon="ANORITH" },
+      [SKULL_FOSSIL] = { name="SKULL FOSSIL", species=408, pokemon="CRANIDOS" },
+      [ARMOR_FOSSIL] = { name="ARMOR FOSSIL", species=410, pokemon="SHIELDON" },
+    }
+    local Bag = require("src.core.game3.bag")
+    local Party = require("src.core.game3.party")
+
+    local function extraFossilState(session)
+      session.modData = session.modData or {}
+      session.modData[mod.id] = session.modData[mod.id] or {}
+      local state = session.modData[mod.id]
+      state.fossilLab = state.fossilLab or {}
+      return state.fossilLab
+    end
+
+    local function carriedExtraFossil(session)
+      for _, id in ipairs({ROOT_FOSSIL, CLAW_FOSSIL, SKULL_FOSSIL, ARMOR_FOSSIL}) do
+        if Bag.get(session.bag, id) > 0 then return id, EXTRA_FOSSILS[id] end
+      end
+    end
+
+    local function labScientistAhead(session)
+      if not session or session.map ~= LAB_EXPERIMENT_ROOM then return false end
+      local dx, dy = 0, 0
+      if Player.facing == "up" then dy=-1 elseif Player.facing == "down" then dy=1
+      elseif Player.facing == "left" then dx=-1 elseif Player.facing == "right" then dx=1 end
+      local obj = Objects.at and Objects.at(Player.cellX + dx, Player.cellY + dy)
+      return obj and (obj.localId == 2 or obj.scriptKey == "CinnabarIsland_PokemonLab_ExperimentRoom_EventScript_FossilScientist")
+    end
+
+    local function offerExtraFossil(session, id, fossil)
+      local state = extraFossilState(session)
+      Field.lock("extra_fossil_lab")
+      Message.show("You have a "..fossil.name.."! It is a fossil of "..fossil.pokemon.."!", function()
+        Message.show("I can make it live again! Give it to me.", function()
+          if Bag.remove(session.bag, id, 1) then
+            state.pending, state.ready = id, false
+            Message.show("It takes time. Go for a walk!", function() Field.unlock("extra_fossil_lab") end)
+          else
+            Field.unlock("extra_fossil_lab")
+          end
+        end)
+      end)
+    end
+
+    local function giveExtraFossilMon(session, id, fossil)
+      local state = extraFossilState(session)
+      Field.lock("extra_fossil_lab")
+      local species = fossil.species
+      if species > 386 then species = species + 64 end
+      local ok = Party.giveMon(session, species, 5, nil, {toPC=true})
+      if ok then
+        state.pending, state.ready = nil, false
+        Message.show("Your "..fossil.pokemon.." is back to life!", function() Field.unlock("extra_fossil_lab") end)
+      else
+        Message.show("You have no room for this POKEMON.", function() Field.unlock("extra_fossil_lab") end)
+      end
+    end
+
     local rawFieldInteract = Field.interact
     if not Field._fossilDealerInteractInstalled then
       Field.interact = function(game)
         local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+        if labScientistAhead(session) and not Field.isLocked() then
+          local state = extraFossilState(session)
+          if state.pending then
+            local fossil = EXTRA_FOSSILS[state.pending]
+            if state.ready and fossil then
+              giveExtraFossilMon(session, state.pending, fossil)
+              return true
+            elseif fossil then
+              Message.show("It takes time. Go for a walk!")
+              return true
+            end
+          end
+          local id, fossil = carriedExtraFossil(session)
+          if id and fossil then
+            offerExtraFossil(session, id, fossil)
+            return true
+          end
+        end
+
         local dealer = Objects._byId and Objects._byId[FOSSIL_DEALER_ID]
         if dealer and dealerMap(session) and not Field.isLocked() then
           local dx, dy = 0, 0
