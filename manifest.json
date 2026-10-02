@@ -8,6 +8,7 @@
   "category": "GAMEPLAY",
   "games": ["firered", "leafgreen"],
   "permissions": ["engine_internals"],
+  "priority": 120,
   "dependencies": [],
   "optional_dependencies": ["RealTimeClockTest", "untamed_advanced", "national_dex_gen3"],
   "conflicts": [],
