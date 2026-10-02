@@ -731,10 +731,14 @@ return function(mod)
       end
     end
 
+    local navelRockSailorInteract
     local rawFieldInteract = Field.interact
     if not Field._fossilDealerInteractInstalled then
       Field.interact = function(game)
         local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+        if navelRockSailorInteract and navelRockSailorInteract(game, session) then
+          return true
+        end
         if labScientistAhead(session) and not Field.isLocked() then
           local state = extraFossilState(session)
           if state.pending then
@@ -853,6 +857,59 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
           pendingNavel = false
           return oldFerryTask(ctx, adapters, destId)
         end
+
+
+        local navelReturnTask
+        local function isNavelHarbor(session)
+          local id = tostring(session and session.map or ""):upper()
+          return id:find("NAVEL_ROCK_HARBOR", 1, true) ~= nil
+            or id:find("NAVELROCK_HARBOR", 1, true) ~= nil
+        end
+
+        navelRockSailorInteract = function(game, session)
+          if not isNavelHarbor(session) or Field.isLocked() then return false end
+          local dx, dy = 0, 0
+          local face = Player.facing
+          if face == "up" then dy=-1 elseif face == "down" then dy=1
+          elseif face == "left" then dx=-1 elseif face == "right" then dx=1 end
+          if Player.cellX + dx ~= 8 or Player.cellY + dy ~= 6 then return false end
+
+          local Adapters = require("src.core.game3.scripting.adapters")
+          local Multichoice = require("src.core.game3.scripting.multichoice")
+          local adapters = Adapters.host(mod, game, game and (game.overworld or game.world))
+          local ctx = SpaceSea.vm and SpaceSea.vm.ctx or nil
+          local MENU_ID = 0xF002
+          Field.lock("navel_rock_ferry")
+
+          local function choose(page)
+            local labels, top = oldMenu(9, page)
+            Multichoice.LISTS[MENU_ID] = { labels=labels, count=#labels }
+            adapters.multichoice({
+              op="multichoice", [1]=17, [2]=top, [3]=MENU_ID, [4]=0,
+            }, function(sel)
+              local dest = oldSelected(9, page, tonumber(sel) or 127)
+              if dest == 254 then
+                choose(page == 1 and 0 or 1)
+              elseif dest == 127 then
+                Field.unlock("navel_rock_ferry")
+              else
+                FlagsSea.setVar(SpaceSea.store, ctx, 0x8004, 9)
+                FlagsSea.setVar(SpaceSea.store, ctx, 0x8006, dest)
+                navelReturnTask = oldFerryTask(ctx, adapters, dest)
+              end
+            end)
+          end
+
+          Message.show("Where do you want to sail?", function() choose(0) end)
+          return true
+        end
+
+        mod.events:on("world.stepped", function()
+          if navelReturnTask and navelReturnTask() then
+            navelReturnTask = nil
+            Field.unlock("navel_rock_ferry")
+          end
+        end)
       end
     end
 
