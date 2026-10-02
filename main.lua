@@ -822,14 +822,10 @@ return function(mod)
       if (tonumber(session.vars[VAR_MAP_SCENE_VERMILION_CITY]) or 0) < 3 then
         session.vars[VAR_MAP_SCENE_VERMILION_CITY] = 3
       end
-      -- Scene 3 is the normal post-Bill state where the Vermilion sailor
-      -- operates the Seagallop. Scene 1 is enough for One Island's services.
-      -- Do not force the later scene 5 here; that skips more story state than
-      -- the ferry itself needs.
+      -- Test mode skips the Sevii story so the MysticTicket/Navel Rock
+      -- path can be exercised from an unfinished save.
       session.vars[VAR_MAP_SCENE_VERMILION_CITY] = 3
-      if (tonumber(session.vars[VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F]) or 0) < 1 then
-        session.vars[VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F] = 1
-      end
+      session.vars[VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F] = 6
     end
 
     local function tryMysticTicketEvent()
