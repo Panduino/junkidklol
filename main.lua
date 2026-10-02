@@ -205,15 +205,21 @@ return function(mod)
     [492]=true,[493]=true,
   }
 
-  local function isLegendaryOrMythical(nat)
-    return LEGENDARY_OR_MYTHICAL[nat] == true
+  local FOSSIL_FAMILIES = {
+    [138]=true,[139]=true,[140]=true,[141]=true,[142]=true,
+    [345]=true,[346]=true,[347]=true,[348]=true,
+    [408]=true,[409]=true,[410]=true,[411]=true,
+  }
+
+  local function isExcludedWildSpecies(nat)
+    return LEGENDARY_OR_MYTHICAL[nat] == true or FOSSIL_FAMILIES[nat] == true
   end
 
   -- One representative from every evolutionary family that is still absent
   -- after the merged HGSS/FireRed encounter backbone. Only these missing
   -- families are added; their evolutions are left to evolution/breeding.
   local MISSING_FAMILY_REPRESENTATIVES = {
-    1,4,7,60,83,98,102,106,108,116,122,123,124,126,127,131,133,137,138,140,142,143,147,152,155,158,176,177,179,183,185,190,191,193,203,204,206,207,209,211,213,214,220,222,223,225,226,227,234,235,241,246,252,255,258,261,263,265,270,273,276,278,280,283,285,287,290,293,299,300,302,303,304,307,309,311,312,313,314,316,318,320,324,327,328,331,333,335,336,337,338,339,341,343,345,347,349,351,352,353,357,361,363,366,369,370,371,374,387,390,393,396,399,401,403,408,410,412,415,417,418,420,422,425,427,431,434,441,442,443,447,449,451,453,456,459
+    1,4,7,60,83,98,102,106,108,116,122,123,124,126,127,131,133,137,143,147,152,155,158,176,177,179,183,185,190,191,193,203,204,206,207,209,211,213,214,220,222,223,225,226,227,234,235,241,246,252,255,258,261,263,265,270,273,276,278,280,283,285,287,290,293,299,300,302,303,304,307,309,311,312,313,314,316,318,320,324,327,328,331,333,335,336,337,338,339,341,343,349,351,352,353,357,361,363,366,369,370,371,374,387,390,393,396,399,401,403,412,415,417,418,420,422,425,427,431,434,441,442,443,447,449,451,453,456,459
   }
 
   -- Minimum area level for stronger family representatives. This keeps
@@ -305,7 +311,7 @@ return function(mod)
     -- have only a few distinct species; do not pad every table to 12.
     for _, nat in ipairs(base) do
       nat = progressionSpecies(nat, profile)
-      if nat >= 1 and nat <= 493 and not isLegendaryOrMythical(nat) then
+      if nat >= 1 and nat <= 493 and not isExcludedWildSpecies(nat) then
         out[#out + 1] = entry(nat, profile.min, profile.max)
         seen[out[#out].species] = true
       end
