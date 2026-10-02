@@ -163,6 +163,14 @@ return function(mod)
     return 1
   end
 
+  -- Legendary and Mythical Pokémon are handled separately in FireRed.
+  local function isLegendaryOrMythical(nat)
+    return (nat >= 144 and nat <= 151)
+      or (nat >= 243 and nat <= 251)
+      or (nat >= 377 and nat <= 386)
+      or (nat >= 480 and nat <= 493)
+  end
+
   local cache = {}
 
   local function entry(nat, minLevel, maxLevel)
@@ -185,7 +193,8 @@ return function(mod)
 
     local coverageNats = {}
     for nat = 1, 493 do
-      local speciesHome = homeForSpecies(nat, Pokemon)
+      if not isLegendaryOrMythical(nat) then
+        local speciesHome = homeForSpecies(nat, Pokemon)
       local allMaps = HABITAT_MAP[speciesHome] or HABITAT_MAP.field
       local gen = nat <= 151 and 1 or nat <= 251 and 2 or nat <= 386 and 3 or 4
       local maps = {}
@@ -196,8 +205,9 @@ return function(mod)
       if #maps == 0 then maps = allMaps end
       local targetMap = ((nat - 1) % #maps) + 1
       local targetPeriod = PERIODS[(math.floor((nat - 1) / #maps) % 3) + 1]
-      if gen <= profile.gen and maps[targetMap] == profile.id and targetPeriod == period then
-        coverageNats[#coverageNats + 1] = nat
+        if gen <= profile.gen and maps[targetMap] == profile.id and targetPeriod == period then
+          coverageNats[#coverageNats + 1] = nat
+        end
       end
     end
     table.sort(coverageNats)
@@ -208,7 +218,7 @@ return function(mod)
 
     local base = profile.base and profile.base[period] or {}
     for _, nat in ipairs(base) do
-      if nat >= 1 and nat <= 493 then
+      if nat >= 1 and nat <= 493 and not isLegendaryOrMythical(nat) then
         uniqueAppend(out, seen, entry(nat, profile.min, profile.max))
       end
     end
@@ -216,7 +226,7 @@ return function(mod)
     local scored = {}
     for nat = 1, 493 do
       local engineSpecies = nat <= 386 and nat or nat + 64
-      if not seen[engineSpecies] then
+      if not isLegendaryOrMythical(nat) and not seen[engineSpecies] then
         local speciesHome = homeForSpecies(nat, Pokemon)
         local score = (speciesHome == profile.habitat and 8 or 0) + periodBonus(nat, period, Pokemon)
         local gen = nat <= 151 and 1 or nat <= 251 and 2 or nat <= 386 and 3 or 4
