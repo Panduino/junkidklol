@@ -566,7 +566,8 @@ return function(mod)
 
     local FOSSIL_DEALER_ID = 125
     local FOSSIL_PRICE = 3000
-    local ROOT_FOSSIL, CLAW_FOSSIL = 286, 287\n    local HELIX_FOSSIL, DOME_FOSSIL = 357, 358
+    local ROOT_FOSSIL, CLAW_FOSSIL = 286, 287
+    local HELIX_FOSSIL, DOME_FOSSIL = 357, 358
     local SKULL_FOSSIL, ARMOR_FOSSIL = "SKULL_FOSSIL", "ARMOR_FOSSIL"
 
     local FOSSIL_MARTS = {
@@ -593,7 +594,8 @@ return function(mod)
             price=FOSSIL_PRICE, description="A fossil from a prehistoric POKEMON." }
         end
         local info = rawItemInfo(id)
-        if info and (tonumber(id) == ROOT_FOSSIL or tonumber(id) == CLAW_FOSSIL\n          or tonumber(id) == HELIX_FOSSIL or tonumber(id) == DOME_FOSSIL) then
+        if info and (tonumber(id) == ROOT_FOSSIL or tonumber(id) == CLAW_FOSSIL
+          or tonumber(id) == HELIX_FOSSIL or tonumber(id) == DOME_FOSSIL) then
           local copy = {}
           for k, v in pairs(info) do copy[k] = v end
           copy.price = FOSSIL_PRICE
