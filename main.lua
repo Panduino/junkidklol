@@ -789,6 +789,7 @@ return function(mod)
     local MYSTIC_TICKET = 370
     local FLAG_ENABLE_SHIP_NAVEL_ROCK = 0x84A
     local FLAG_RECEIVED_MYSTIC_TICKET = 0x2A8
+local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
     local VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F = 0x4076
     local VAR_MAP_SCENE_VERMILION_CITY = 0x407E
 local FLAG_HIDE_ONE_ISLAND_BILL = 0x71
@@ -891,6 +892,9 @@ local FLAG_GOT_RUBY = 0x2DD
               local ctx2 = Space2.vm and Space2.vm.ctx or nil
               Flags2.setFlag(Space2.store, ctx2, FLAG_ENABLE_SHIP_NAVEL_ROCK, true)
               Flags2.setFlag(Space2.store, ctx2, FLAG_RECEIVED_MYSTIC_TICKET, true)
+              Flags2.setFlag(Space2.store, ctx2, FLAG_SHOWN_MYSTIC_TICKET, false)
+              Flags2.setVar(Space2.store, ctx2, VAR_MAP_SCENE_VERMILION_CITY, 3)
+              Flags2.setVar(Space2.store, ctx2, VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 5)
             end
             state.mysticTicketGiven = true
             Message.show("{PLAYER} received the MYSTICTICKET!", function()
