@@ -118,14 +118,46 @@ return function(mod)
     rare = {"FR_CERULEAN_CAVE_1F","FR_CERULEAN_CAVE_B1F","FR_CERULEAN_CAVE_B2F"},
   }
 
+  -- HGSS-based Kanto surf/fishing pools. Fishing is stored in FireRed's
+  -- ten-slot rod layout: Old Rod 1-2, Good Rod 3-5, Super Rod 6-10.
+  local WATER_TABLES = {
+    FR_ROUTE_4  = { surf={118,119}, fishing={129,118,118,129,119,118,118,119,129,119} },
+    FR_ROUTE_6  = { surf={54,55}, fishing={129,54,54,129,55,54,54,55,129,55} },
+    FR_ROUTE_9  = { surf={118,119}, fishing={129,118,118,129,119,118,118,119,129,119} },
+    FR_ROUTE_10 = { surf={72,73}, fishing={129,72,72,129,73,72,72,73,129,73} },
+    FR_ROUTE_12 = { surf={73,195}, fishing={129,72,72,129,211,72,72,211,129,73} },
+    FR_ROUTE_13 = { surf={73,195}, fishing={129,72,72,129,211,72,72,211,129,73} },
+    FR_ROUTE_17 = { surf={72,73}, fishing={129,72,72,129,90,72,72,90,129,73} },
+    FR_ROUTE_18 = { surf={72,73}, fishing={129,72,72,129,90,72,72,90,129,73} },
+    FR_ROUTE_19 = { surf={72,73}, fishing={129,98,98,129,222,98,98,222,129,73} },
+    FR_ROUTE_20 = { surf={72,73}, fishing={129,98,98,129,222,98,98,222,129,73} },
+    FR_ROUTE_21 = { surf={72,73}, fishing={129,98,98,129,222,98,98,222,129,73} },
+    FR_ROUTE_22 = { surf={60,61}, fishing={129,60,60,129,61,60,60,61,129,61} },
+    FR_ROUTE_23 = { surf={60,61}, fishing={129,60,60,129,61,60,60,61,129,61} },
+    FR_ROUTE_24 = { surf={118,119}, fishing={129,118,118,129,119,118,118,119,129,119} },
+    FR_ROUTE_25 = { surf={118,119}, fishing={129,118,118,129,119,118,118,119,129,119} },
+    FR_ROUTE_28 = { surf={60,61}, fishing={129,60,60,129,61,60,60,61,129,61} },
+  }
+
+  -- Missing Water families are kept in water, never injected into land grass.
+  -- These additions spread Gen 1-4 Water species across sensible Kanto waters.
+  local WATER_ADDITIONS = {
+    FR_ROUTE_4={7,98,116}, FR_ROUTE_6={183,270,283}, FR_ROUTE_9={339,341},
+    FR_ROUTE_10={170,223}, FR_ROUTE_12={194,211,318}, FR_ROUTE_13={320,349},
+    FR_ROUTE_17={278,422}, FR_ROUTE_18={418,456}, FR_ROUTE_19={363,366},
+    FR_ROUTE_20={222,370}, FR_ROUTE_21={258,393}, FR_ROUTE_22={60,339},
+    FR_ROUTE_23={131,138,140}, FR_ROUTE_24={118,349}, FR_ROUTE_25={283,418},
+    FR_ROUTE_28={223,456},
+  }
+
   local PROFILE_BY_ID = {}
   for _, p in ipairs(PROFILES) do PROFILE_BY_ID[p.id] = p end
 
   local function typeList(nat, Pokemon)
     local species = nat <= 386 and nat or nat + 64
-    local ok, a, b = pcall(Pokemon.types, species)
-    if not ok then return {} end
-    return {a, b}
+    local ok, types = pcall(Pokemon.types, species)
+    if not ok or type(types) ~= "table" then return {} end
+    return {types[1], types[2]}
   end
 
   local function hasType(types, wanted)
@@ -181,7 +213,7 @@ return function(mod)
   -- after the merged HGSS/FireRed encounter backbone. Only these missing
   -- families are added; their evolutions are left to evolution/breeding.
   local MISSING_FAMILY_REPRESENTATIVES = {
-    1,4,7,60,83,98,102,106,108,116,122,123,124,126,127,131,133,137,138,140,142,143,147,152,155,158,176,177,179,183,185,190,191,193,201,203,204,206,207,209,211,213,214,220,222,223,225,226,227,234,235,241,246,252,255,258,261,263,265,270,273,276,278,280,283,285,287,290,293,299,300,302,303,304,307,309,311,312,313,314,316,318,320,324,327,328,331,333,335,336,337,338,339,341,343,345,347,349,351,352,353,357,361,363,366,369,370,371,374,387,390,393,396,399,401,403,408,410,412,415,417,418,420,422,425,427,431,434,441,442,443,448,449,451,453,456,459
+    1,4,7,60,83,98,102,106,108,116,122,123,124,126,127,131,133,137,138,140,142,143,147,152,155,158,176,177,179,183,185,190,191,193,201,203,204,206,207,209,211,213,214,220,222,223,225,226,227,234,235,241,246,252,255,258,261,263,265,270,273,276,278,280,283,285,287,290,293,299,300,302,303,304,307,309,311,312,313,314,316,318,320,324,327,328,331,333,335,336,337,338,339,341,343,345,347,349,351,352,353,357,361,363,366,369,370,371,374,387,390,393,396,399,401,403,408,410,412,415,417,418,420,422,425,427,431,434,441,442,443,447,449,451,453,456,459
   }
 
   local extraAssignments = nil
@@ -196,8 +228,14 @@ return function(mod)
       load[profile.id] = { morning=0, day=0, night=0 }
     end
 
-    for _, nat in ipairs(MISSING_FAMILY_REPRESENTATIVES) do
+    for _, originalNat in ipairs(MISSING_FAMILY_REPRESENTATIVES) do
+      local nat = originalNat
+      if nat == 448 then nat = 447 end
+      if nat == 376 then nat = 374 end
       local habitat = homeForSpecies(nat, Pokemon)
+      -- Water-family coverage is handled by WATER_ADDITIONS so these species
+      -- cannot become grass/land overworld spawns.
+      if habitat ~= "water" then
       local maps = HABITAT_MAP[habitat] or HABITAT_MAP.field
       local bestId, bestPeriod, bestLoad = nil, nil, math.huge
 
@@ -216,6 +254,7 @@ return function(mod)
         local list = extraAssignments[bestId][bestPeriod]
         list[#list + 1] = nat
         load[bestId][bestPeriod] = load[bestId][bestPeriod] + 1
+      end
       end
     end
 
@@ -255,6 +294,8 @@ return function(mod)
     local additions = buildExtraAssignments(Pokemon)
     local extras = additions[profile.id] and additions[profile.id][period] or {}
     for _, nat in ipairs(extras) do
+      if nat == 448 then nat = 447 end
+      if nat == 376 then nat = 374 end
       uniqueAppend(out, seen, entry(nat, profile.min, profile.max))
     end
 
@@ -267,12 +308,33 @@ return function(mod)
       end
     end
 
-    cache[key] = { land = { rate = 20, slots = out } }
-    if profile.water then
-      cache[key].land = nil
-      cache[key].water = { rate = 20, slots = out }
+    local result = {}
+    if not profile.water then
+      result.land = { rate = 20, slots = out }
     end
-    return cache[key]
+
+    local wt = WATER_TABLES[profile.id]
+    if wt then
+      local waterSlots, waterSeen = {}, {}
+      for _, nat in ipairs(wt.surf or {}) do
+        uniqueAppend(waterSlots, waterSeen, entry(nat, profile.min, profile.max))
+      end
+      for _, nat in ipairs(WATER_ADDITIONS[profile.id] or {}) do
+        uniqueAppend(waterSlots, waterSeen, entry(nat, profile.min, profile.max))
+      end
+      result.water = { rate = 15, slots = waterSlots }
+
+      local fishSlots = {}
+      for _, nat in ipairs(wt.fishing or {}) do
+        fishSlots[#fishSlots + 1] = entry(nat, profile.min, profile.max)
+      end
+      result.fishing = { rate = 0, slots = fishSlots }
+    elseif profile.water then
+      result.water = { rate = 15, slots = out }
+    end
+
+    cache[key] = result
+    return result
   end
 
   local installed = false
