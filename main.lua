@@ -783,27 +783,18 @@ return function(mod)
       placeFossilDealer()
     end)
 
-    -- Temporary while the MysticTicket/Navel Rock path is being tested.
-    -- Set this back to false after the event has been verified in-game.
-    local MYSTIC_TICKET_TEST = true
     local MYSTIC_TICKET = 370
     local FLAG_ENABLE_SHIP_NAVEL_ROCK = 0x84A
     local FLAG_RECEIVED_MYSTIC_TICKET = 0x2A8
 local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
     local VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F = 0x4076
     local VAR_MAP_SCENE_VERMILION_CITY = 0x407E
-local FLAG_HIDE_ONE_ISLAND_BILL = 0x71
-local FLAG_HIDE_ONE_ISLAND_POKECENTER_BILL = 0x72
-local FLAG_SYS_CAN_LINK_WITH_RS = 0x844
-local FLAG_RECOVERED_SAPPHIRE = 0x2DC
-local FLAG_GOT_RUBY = 0x2DD
     local LEGENDARY_UNLOCK = { 144, 145, 146, 243, 244, 245 }
     local Dex = require("src.core.game3.dex")
     local MysteryGift = require("src.core.game3.mystery_gift")
     local mysticTicketBusy = false
 
     local function hasLegendarySet(session)
-      if MYSTIC_TICKET_TEST then return true end
       if not session or not session.dex then return false end
       for _, species in ipairs(LEGENDARY_UNLOCK) do
         if not Dex.isCaught(session.dex, species) then return false end
@@ -880,36 +871,6 @@ local FLAG_GOT_RUBY = 0x2DD
       session.modData = session.modData or {}
       session.modData[mod.id] = session.modData[mod.id] or {}
       return session.modData[mod.id]
-    end
-
-    local function enableMysticTicketTestTravel(session)
-      if not MYSTIC_TICKET_TEST or not session then return end
-      session.vars = session.vars or {}
-      if (tonumber(session.vars[VAR_MAP_SCENE_VERMILION_CITY]) or 0) < 3 then
-        session.vars[VAR_MAP_SCENE_VERMILION_CITY] = 3
-      end
-      -- Test mode skips the Sevii story so the MysticTicket/Navel Rock
-      -- path can be exercised from an unfinished save.
-      session.vars[VAR_MAP_SCENE_VERMILION_CITY] = 3
-      session.vars[VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F] = 6
-      session.flags = session.flags or {}
-      local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
-      local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
-      if okSpace and okFlags and Space and Flags and Space.store then
-        local ctx = Space.vm and Space.vm.ctx or nil
-        Flags.setFlag(Space.store, ctx, FLAG_HIDE_ONE_ISLAND_BILL, true)
-        Flags.setFlag(Space.store, ctx, FLAG_HIDE_ONE_ISLAND_POKECENTER_BILL, true)
-        Flags.setFlag(Space.store, ctx, FLAG_RECOVERED_SAPPHIRE, true)
-        Flags.setFlag(Space.store, ctx, FLAG_GOT_RUBY, true)
-        Flags.setFlag(Space.store, ctx, FLAG_SYS_CAN_LINK_WITH_RS, true)
-        Flags.setVar(Space.store, ctx, VAR_MAP_SCENE_VERMILION_CITY, 3)
-        Flags.setVar(Space.store, ctx, VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 6)
-      end
-      session.flags[FLAG_HIDE_ONE_ISLAND_BILL] = true
-      session.flags[FLAG_HIDE_ONE_ISLAND_POKECENTER_BILL] = true
-      session.flags[FLAG_RECOVERED_SAPPHIRE] = true
-      session.flags[FLAG_GOT_RUBY] = true
-      session.flags[FLAG_SYS_CAN_LINK_WITH_RS] = true
     end
 
     local function tryMysticTicketEvent()
@@ -1154,7 +1115,6 @@ local FLAG_GOT_RUBY = 0x2DD
     mod.events:on("map.entered", function(ev)
       refreshPeriod()
       showTowerDarkrai()
-      enableMysticTicketTestTravel(engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession())
       tryMysticTicketEvent()
     end)
     mod.events:on("world.stepped", function(ev)
