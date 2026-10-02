@@ -832,7 +832,7 @@ return function(mod)
       return beast
     end
 
-    local DARKRAI_NPC_ID = 126
+    local DARKRAI_NPC_ID = 126\n    local UntamedEngine = engine
 
     local function clearTowerActor()
       if Objects._byId and Objects._byId[DARKRAI_NPC_ID] then
@@ -871,7 +871,7 @@ return function(mod)
       local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
       local x, y = 11, 4
       local actor = {
-        localId=DARKRAI_NPC_ID, originLocalId=DARKRAI_NPC_ID,
+        active=true, localId=DARKRAI_NPC_ID, originLocalId=DARKRAI_NPC_ID,
         originMapId=session.map, cellX=x, cellY=y, px=x*16, py=y*16,
         homeX=x, homeY=y, targetX=x, targetY=y,
         facing="down", sprite=graphicsId, graphicsId=graphicsId,
