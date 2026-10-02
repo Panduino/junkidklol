@@ -811,6 +811,61 @@ local FLAG_GOT_RUBY = 0x2DD
       return true
     end
 
+    -- FireRed only checks event tickets at Vermilion. Extend the shared
+    -- Seagallop menu so the MysticTicket can also reach Navel Rock from
+    -- the Sevii harbors without replacing any normal island destination.
+    do
+      local okSea, Seagallop = pcall(require, "src.core.game3.scripting.natives_seagallop")
+      local okSpaceSea, SpaceSea = pcall(require, "src.core.game3.scripting.space")
+      local okFlagsSea, FlagsSea = pcall(require, "src.core.game3.scripting.flags")
+      local okBagSea, BagSea = pcall(require, "src.core.game3.bag")
+      if okSea and okSpaceSea and okFlagsSea and okBagSea and Seagallop
+          and not Seagallop._mysticTicketCompat then
+        Seagallop._mysticTicketCompat = true
+        local oldMenu = Seagallop.destinationMenu
+        local oldSelected = Seagallop.selectedDestination
+        local oldFerryTask = Seagallop.ferryTask
+        local pendingNavel = false
+
+        local function hasMysticTicket()
+          local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+          local ctx = SpaceSea.vm and SpaceSea.vm.ctx or nil
+          return session and session.bag
+            and BagSea.get(session.bag, MYSTIC_TICKET) > 0
+            and FlagsSea.getFlag(SpaceSea.store, ctx, FLAG_ENABLE_SHIP_NAVEL_ROCK) == true
+        end
+
+        Seagallop.destinationMenu = function(originId, page)
+          local labels, top = oldMenu(originId, page)
+          if hasMysticTicket() and page == 1 then
+            -- Page 2 normally ends in Other / Exit. Insert Navel Rock before
+            -- those controls, keeping every ordinary destination available.
+            table.insert(labels, #labels, "NAVEL ROCK")
+          end
+          return labels, top
+        end
+
+        Seagallop.selectedDestination = function(originId, page, result)
+          if hasMysticTicket() and page == 1 and result == 3 then
+            pendingNavel = true
+            -- The stock script has no SEAGALLOP_NAVEL_ROCK switch case here.
+            -- Route through its Four Island case, then redirect only this trip.
+            return 4
+          end
+          return oldSelected(originId, page, result)
+        end
+
+        Seagallop.ferryTask = function(ctx, adapters, destId)
+          if pendingNavel and destId == 4 then
+            pendingNavel = false
+            return oldFerryTask(ctx, adapters, 9)
+          end
+          pendingNavel = false
+          return oldFerryTask(ctx, adapters, destId)
+        end
+      end
+    end
+
     local function oneIslandCenter(mapId)
       local okCatalog, MapCatalog = pcall(require, "src.import.gba.map_catalog")
       if okCatalog and MapCatalog and MapCatalog.pretToEngine then
