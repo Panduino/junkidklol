@@ -589,16 +589,15 @@ return function(mod)
       actor.px, actor.py = 11 * 16, 4 * 16
       actor.elevation = engine.elevationAt and engine.elevationAt(11, 4) or 3
       actor.currentElevation = actor.elevation
-      actor.facing, actor.moveDir = "down", "down"
+      actor.facing = "down"
       actor.moving, actor.visible, actor.hidden, actor.invisible = false, true, false, false
-      actor.movementType = 0
-      actor.act, actor.anim, actor.animT = nil, nil, 0
       actor.draw = function(a, sx, sy)
+        -- Keep the apparition visually pinned without touching Untamed's
+        -- internal action state; its updater expects those fields to remain valid.
         a.cellX, a.cellY = 11, 4
         a.targetX, a.targetY = 11, 4
         a.px, a.py = 11 * 16, 4 * 16
-        a.moving, a.facing, a.moveDir = false, "down", "down"
-        a.act, a.anim, a.animT = nil, nil, 0
+        a.moving, a.facing = false, "down"
         return engine.Gfx.draw(a.sheet, 0, false, a.palRow, sx, sy)
       end
       towerActor = actor
