@@ -561,11 +561,10 @@ return function(mod)
         engine.Owe.despawnAll("generated", false)
       end
 
-      local actor
-      for i = 2, #(engine.actors or {}) do
-        if not engine.actors[i].active then actor = engine.actors[i] break end
-      end
-      if not actor then return end
+      -- Use Untamed's non-OWE slot for the apparition. Its collision code
+      -- explicitly excludes this slot from wild encounter triggering.
+      local actor = engine.FOLLOWER
+      if not actor or actor.active then return end
 
       local personality = engine.random32 and engine.random32() or 0
       local atlasSpecies = engine.expansionSpecies(DARKRAI_SPECIES, personality)
@@ -575,7 +574,7 @@ return function(mod)
       if not sheet then return end
 
       actor.active = true
-      actor.oweType = "manual"
+      actor.oweType = nil
       actor.noDespawn = true
       actor.species = atlasSpecies
       actor.engineSpecies = DARKRAI_SPECIES
@@ -603,42 +602,37 @@ return function(mod)
       towerActor = actor
     end
 
-    if engine.Field and not engine.Field._darkraiTowerInstalled then
-      local rawInteract = engine.Field.interact
-      engine.Field.interact = function(game, ...)
-        if towerActor and towerActor.active and not darkraiSceneBusy then
-          local P = engine.Player
-          local dx = ({ left=-1, right=1 })[P.facing] or 0
-          local dy = ({ up=-1, down=1 })[P.facing] or 0
-          if P.cellX + dx == towerActor.cellX and P.cellY + dy == towerActor.cellY then
-            local session = engine.Runtime.getSession()
-            local Message = require("src.ui.game3.message")
-            local Fade = require("src.ui.game3.fade")
-            darkraiSceneBusy = true
-            engine.Field.locked = true
+    local function triggerDarkraiScene()
+      if not towerActor or not towerActor.active or darkraiSceneBusy then return false end
+      local session = engine.Runtime.getSession()
+      if not session or session.map ~= TOWER_7F then return false end
+      local P = engine.Player
+      -- Trigger one tile before Darkrai instead of requiring interaction/collision.
+      if P.cellX ~= 11 or P.cellY ~= 5 then return false end
 
-            Message.show("A cold presence hangs in the air...", function()
-              Message.show("You suddenly feel very tired...", function()
-                Fade.begin(Fade.MODE.TO_BLACK, 1, function()
-                  clearTowerActor()
-                  local state = darkraiState(session)
-                  state.darkraiTowerTriggered = true
-                  addDarkraiRoamer(session)
-                  Fade.begin(Fade.MODE.FROM_BLACK, 1, function()
-                    Message.show("The POKEMON vanished!", function()
-                      engine.Field.locked = false
-                      darkraiSceneBusy = false
-                    end)
-                  end)
-                end)
+      local Message = require("src.ui.game3.message")
+      local Fade = require("src.ui.game3.fade")
+      darkraiSceneBusy = true
+      engine.Field.locked = true
+      P.facing = "up"
+
+      Message.show("A cold presence hangs in the air...", function()
+        Message.show("You suddenly feel very tired...", function()
+          Fade.begin(Fade.MODE.TO_BLACK, 1, function()
+            clearTowerActor()
+            local state = darkraiState(session)
+            state.darkraiTowerTriggered = true
+            addDarkraiRoamer(session)
+            Fade.begin(Fade.MODE.FROM_BLACK, 1, function()
+              Message.show("The POKEMON vanished!", function()
+                engine.Field.locked = false
+                darkraiSceneBusy = false
               end)
             end)
-            return true
-          end
-        end
-        return rawInteract(game, ...)
-      end
-      engine.Field._darkraiTowerInstalled = true
+          end)
+        end)
+      end)
+      return true
     end
 
     local rawTableFor = engine.Encounters.tableFor
@@ -695,6 +689,7 @@ return function(mod)
     mod.events:on("world.stepped", function(ev)
       refreshPeriod()
       showTowerDarkrai()
+      triggerDarkraiScene()
     end)
 
     mod.exports.engine = engine
