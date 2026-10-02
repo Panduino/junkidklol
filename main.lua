@@ -177,6 +177,51 @@ return function(mod)
     return LEGENDARY_OR_MYTHICAL[nat] == true
   end
 
+  -- One representative from every evolutionary family that is still absent
+  -- after the merged HGSS/FireRed encounter backbone. Only these missing
+  -- families are added; their evolutions are left to evolution/breeding.
+  local MISSING_FAMILY_REPRESENTATIVES = {
+    1,4,7,60,83,98,102,106,108,116,122,123,124,126,127,131,133,137,138,140,142,143,147,152,155,158,176,177,179,183,185,190,191,193,201,203,204,206,207,209,211,213,214,220,222,223,225,226,227,234,235,241,246,252,255,258,261,263,265,270,273,276,278,280,283,285,287,290,293,299,300,302,303,304,307,309,311,312,313,314,316,318,320,324,327,328,331,333,335,336,337,338,339,341,343,345,347,349,351,352,353,357,361,363,366,369,370,371,374,387,390,393,396,399,401,403,408,410,412,415,417,418,420,422,425,427,431,434,441,442,443,448,449,451,453,456,459
+  }
+
+  local extraAssignments = nil
+
+  local function buildExtraAssignments(Pokemon)
+    if extraAssignments then return extraAssignments end
+    extraAssignments = {}
+
+    local load = {}
+    for _, profile in ipairs(PROFILES) do
+      extraAssignments[profile.id] = { morning={}, day={}, night={} }
+      load[profile.id] = { morning=0, day=0, night=0 }
+    end
+
+    for _, nat in ipairs(MISSING_FAMILY_REPRESENTATIVES) do
+      local habitat = homeForSpecies(nat, Pokemon)
+      local maps = HABITAT_MAP[habitat] or HABITAT_MAP.field
+      local bestId, bestPeriod, bestLoad = nil, nil, math.huge
+
+      for _, id in ipairs(maps) do
+        if PROFILE_BY_ID[id] then
+          for _, period in ipairs(PERIODS) do
+            local score = load[id][period]
+            if score < bestLoad then
+              bestId, bestPeriod, bestLoad = id, period, score
+            end
+          end
+        end
+      end
+
+      if bestId then
+        local list = extraAssignments[bestId][bestPeriod]
+        list[#list + 1] = nat
+        load[bestId][bestPeriod] = load[bestId][bestPeriod] + 1
+      end
+    end
+
+    return extraAssignments
+  end
+
   local cache = {}
 
   local function entry(nat, minLevel, maxLevel)
@@ -204,6 +249,12 @@ return function(mod)
       if nat >= 1 and nat <= 493 and not isLegendaryOrMythical(nat) then
         uniqueAppend(out, seen, entry(nat, profile.min, profile.max))
       end
+    end
+
+    local additions = buildExtraAssignments(Pokemon)
+    local extras = additions[profile.id] and additions[profile.id][period] or {}
+    for _, nat in ipairs(extras) do
+      uniqueAppend(out, seen, entry(nat, profile.min, profile.max))
     end
 
     cache[key] = { land = { rate = 20, slots = out } }
@@ -271,7 +322,7 @@ return function(mod)
     mod.exports.engine = engine
     mod.exports.period = currentPeriod
     mod.exports.tables = PROFILES
-    mod.exports.fullNationalDexCoverage = false
+    mod.exports.fullNationalDexCoverage = true
     installed = true
     mod.log:info("RTC + Untamed + National Dex encounter compatibility installed")
     return true
