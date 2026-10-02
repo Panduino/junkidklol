@@ -842,7 +842,7 @@ local FLAG_GOT_RUBY = 0x2DD
         end
 
         Seagallop.selectedDestination = function(originId, page, result)
-          if hasMysticTicket() and page == 1 and result == 3 then
+          if hasMysticTicket() and page == 1 and result == 4 then
             return 9
           end
           return oldSelected(originId, page, result)
