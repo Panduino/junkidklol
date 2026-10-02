@@ -221,43 +221,31 @@ return function(mod)
   local function buildExtraAssignments(Pokemon)
     if extraAssignments then return extraAssignments end
     extraAssignments = {}
-
     local load = {}
     for _, profile in ipairs(PROFILES) do
       extraAssignments[profile.id] = { morning={}, day={}, night={} }
       load[profile.id] = { morning=0, day=0, night=0 }
     end
-
-    for _, originalNat in ipairs(MISSING_FAMILY_REPRESENTATIVES) do
-      local nat = originalNat
-      if nat == 448 then nat = 447 end
-      if nat == 376 then nat = 374 end
+    for _, nat in ipairs(MISSING_FAMILY_REPRESENTATIVES) do
       local habitat = homeForSpecies(nat, Pokemon)
-      -- Water-family coverage is handled by WATER_ADDITIONS so these species
-      -- cannot become grass/land overworld spawns.
       if habitat ~= "water" then
-      local maps = HABITAT_MAP[habitat] or HABITAT_MAP.field
-      local bestId, bestPeriod, bestLoad = nil, nil, math.huge
-
-      for _, id in ipairs(maps) do
-        if PROFILE_BY_ID[id] then
-          for _, period in ipairs(PERIODS) do
-            local score = load[id][period]
-            if score < bestLoad then
-              bestId, bestPeriod, bestLoad = id, period, score
+        local maps = HABITAT_MAP[habitat] or HABITAT_MAP.field
+        local bestId, bestPeriod, bestLoad = nil, nil, math.huge
+        for _, id in ipairs(maps) do
+          if PROFILE_BY_ID[id] then
+            for _, period in ipairs(PERIODS) do
+              local score = load[id][period]
+              if score < bestLoad then bestId, bestPeriod, bestLoad = id, period, score end
             end
           end
         end
-      end
-
-      if bestId then
-        local list = extraAssignments[bestId][bestPeriod]
-        list[#list + 1] = nat
-        load[bestId][bestPeriod] = load[bestId][bestPeriod] + 1
-      end
+        if bestId then
+          local list = extraAssignments[bestId][bestPeriod]
+          list[#list + 1] = nat
+          load[bestId][bestPeriod] = load[bestId][bestPeriod] + 1
+        end
       end
     end
-
     return extraAssignments
   end
 
