@@ -811,8 +811,14 @@ local FLAG_GOT_RUBY = 0x2DD
     end
 
     local function oneIslandCenter(mapId)
+      local okCatalog, MapCatalog = pcall(require, "src.import.gba.map_catalog")
+      if okCatalog and MapCatalog and MapCatalog.pretToEngine then
+        local expected = MapCatalog.pretToEngine("OneIsland_PokemonCenter_1F")
+        if expected and mapId == expected then return true end
+      end
       local id = tostring(mapId or ""):upper()
-      return id:find("ONE_ISLAND", 1, true) and id:find("POKEMON_CENTER_1F", 1, true)
+      return (id:find("ONE_ISLAND", 1, true) or id:find("ONEISLAND", 1, true))
+        and (id:find("POKEMON_CENTER_1F", 1, true) or id:find("POKEMONCENTER_1F", 1, true))
     end
 
     local function mysticTicketState(session)
@@ -853,7 +859,10 @@ local FLAG_GOT_RUBY = 0x2DD
 
     local function tryMysticTicketEvent()
       local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-      if not session or not oneIslandCenter(session.map) or mysticTicketBusy then return false end
+      local mapId = session and session.map
+      local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
+      if okSpace and Space and Space.mapId then mapId = Space.mapId end
+      if not session or not oneIslandCenter(mapId) or mysticTicketBusy then return false end
       local state = mysticTicketState(session)
       if state.mysticTicketGiven or MysteryGift.getFlag(session, FLAG_RECEIVED_MYSTIC_TICKET) then
         state.mysticTicketGiven = true
