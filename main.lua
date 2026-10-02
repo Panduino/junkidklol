@@ -385,6 +385,92 @@ return function(mod)
       return false
     end
 
+    -- FRLG normally keeps only one roaming beast in session.roamer. Keep all
+    -- three in that same saved field so each has independent route, HP/status,
+    -- personality/IVs, and caught state while preserving the native mechanics.
+    local Roamer = require("src.core.game3.roamer")
+    if not Roamer._allBeastsInstalled then
+      local rawInit = Roamer.init
+      local rawMove = Roamer.move
+      local rawJump = Roamer.jump
+      local rawTryEncounter = Roamer.tryEncounter
+      local rawBattleEnd = Roamer.onBattleEnd
+
+      local function isMulti(r)
+        return type(r) == "table" and type(r.beasts) == "table"
+      end
+
+      local function withBeast(session, beast, fn, ...)
+        local saved = session.roamer
+        session.roamer = beast
+        local result = fn(session, ...)
+        session.roamer = saved
+        return result
+      end
+
+      Roamer.init = function(session, starterChoice)
+        if not session then return false end
+        local beasts = {}
+        for _, starter in ipairs({ 1, 0, 2 }) do
+          rawInit(session, starter)
+          beasts[#beasts + 1] = session.roamer
+        end
+        session.roamer = { active = true, beasts = beasts }
+        return true
+      end
+
+      Roamer.move = function(session, reason, mapId)
+        local group = session and session.roamer
+        if not isMulti(group) then return rawMove(session, reason, mapId) end
+        for _, beast in ipairs(group.beasts) do
+          if beast.active then withBeast(session, beast, rawMove, reason, mapId) end
+        end
+      end
+
+      Roamer.jump = function(session)
+        local group = session and session.roamer
+        if not isMulti(group) then return rawJump(session) end
+        for _, beast in ipairs(group.beasts) do
+          if beast.active then withBeast(session, beast, rawJump) end
+        end
+      end
+
+      Roamer.tryEncounter = function(session, mapId, terrain)
+        local group = session and session.roamer
+        if not isMulti(group) then return rawTryEncounter(session, mapId, terrain) end
+        local candidates = {}
+        for _, beast in ipairs(group.beasts) do
+          if beast.active
+            and Roamer.normalizeMapId(beast.map) == Roamer.normalizeMapId(mapId) then
+            candidates[#candidates + 1] = beast
+          end
+        end
+        if #candidates == 0 then return nil end
+        local start = (math.random(#candidates))
+        for offset = 0, #candidates - 1 do
+          local beast = candidates[((start + offset - 1) % #candidates) + 1]
+          local enc = withBeast(session, beast, rawTryEncounter, mapId, terrain)
+          if enc then return enc end
+        end
+        return nil
+      end
+
+      Roamer.onBattleEnd = function(session, foeState, battleResult, endReason)
+        local group = session and session.roamer
+        if not isMulti(group) then
+          return rawBattleEnd(session, foeState, battleResult, endReason)
+        end
+        local species = foeState and (foeState.species or foeState.speciesId)
+        for _, beast in ipairs(group.beasts) do
+          if beast.active and beast.species == species then
+            return withBeast(session, beast, rawBattleEnd, foeState, battleResult, endReason)
+          end
+        end
+      end
+
+      Roamer._allBeastsInstalled = true
+    end
+
     local rawTableFor = engine.Encounters.tableFor
     engine.Encounters.tableFor = function(mapId, ...)
       local profile = mapId and PROFILE_BY_ID[mapId]
