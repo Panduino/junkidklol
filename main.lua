@@ -785,6 +785,90 @@ return function(mod)
       placeFossilDealer()
     end)
 
+    -- Temporary while the MysticTicket/Navel Rock path is being tested.
+    -- Set this back to false after the event has been verified in-game.
+    local MYSTIC_TICKET_TEST = true
+    local MYSTIC_TICKET = 370
+    local FLAG_ENABLE_SHIP_NAVEL_ROCK = 0x84A
+    local FLAG_RECEIVED_MYSTIC_TICKET = 0x2A8
+    local VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F = 0x4076
+    local VAR_MAP_SCENE_VERMILION_CITY = 0x407E
+    local LEGENDARY_UNLOCK = { 144, 145, 146, 243, 244, 245 }
+    local Dex = require("src.core.game3.dex")
+    local MysteryGift = require("src.core.game3.mystery_gift")
+    local mysticTicketBusy = false
+
+    local function hasLegendarySet(session)
+      if MYSTIC_TICKET_TEST then return true end
+      if not session or not session.dex then return false end
+      for _, species in ipairs(LEGENDARY_UNLOCK) do
+        if not Dex.isCaught(session.dex, species) then return false end
+      end
+      return true
+    end
+
+    local function oneIslandCenter(mapId)
+      local id = tostring(mapId or ""):upper()
+      return id:find("ONE_ISLAND", 1, true) and id:find("POKEMON_CENTER_1F", 1, true)
+    end
+
+    local function mysticTicketState(session)
+      session.modData = session.modData or {}
+      session.modData[mod.id] = session.modData[mod.id] or {}
+      return session.modData[mod.id]
+    end
+
+    local function enableMysticTicketTestTravel(session)
+      if not MYSTIC_TICKET_TEST or not session then return end
+      session.vars = session.vars or {}
+      if (tonumber(session.vars[VAR_MAP_SCENE_VERMILION_CITY]) or 0) < 3 then
+        session.vars[VAR_MAP_SCENE_VERMILION_CITY] = 3
+      end
+      if (tonumber(session.vars[VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F]) or 0) < 5 then
+        session.vars[VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F] = 5
+      end
+    end
+
+    local function tryMysticTicketEvent()
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      if not session or not oneIslandCenter(session.map) or mysticTicketBusy then return false end
+      local state = mysticTicketState(session)
+      if state.mysticTicketGiven or MysteryGift.getFlag(session, FLAG_RECEIVED_MYSTIC_TICKET) then
+        state.mysticTicketGiven = true
+        return false
+      end
+      if not hasLegendarySet(session) then return false end
+
+      local Message = require("src.ui.game3.message")
+      mysticTicketBusy = true
+      engine.Field.locked = true
+      Message.show("Oh! Perfect timing!", function()
+        Message.show("Something unusual arrived for you.", function()
+          Message.show("It looks like a ticket for the SEAGALLOP ferry.", function()
+            if not Bag.add(session.bag, MYSTIC_TICKET, 1) then
+              Message.show("Your KEY ITEMS POCKET is full.", function()
+                engine.Field.locked = false
+                mysticTicketBusy = false
+              end)
+              return
+            end
+            MysteryGift.setFlag(session, FLAG_ENABLE_SHIP_NAVEL_ROCK, true)
+            MysteryGift.setFlag(session, FLAG_RECEIVED_MYSTIC_TICKET, true)
+            state.mysticTicketGiven = true
+            Message.show("{PLAYER} received the MYSTICTICKET!", function()
+              Message.show("I've never seen a destination like this before...", function()
+                Message.show("You should ask the sailor about it.", function()
+                  engine.Field.locked = false
+                  mysticTicketBusy = false
+                end)
+              end)
+            end)
+          end)
+        end)
+      end)
+      return true
+    end
+
     local DARKRAI_NAT = 491
     local DARKRAI_SPECIES = DARKRAI_NAT + 64
     local TOWER_7F = "FR_POKEMON_TOWER_7F"
@@ -974,11 +1058,14 @@ return function(mod)
     mod.events:on("map.entered", function(ev)
       refreshPeriod()
       showTowerDarkrai()
+      enableMysticTicketTestTravel(engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession())
+      tryMysticTicketEvent()
     end)
     mod.events:on("world.stepped", function(ev)
       refreshPeriod()
       showTowerDarkrai()
       triggerDarkraiScene()
+      tryMysticTicketEvent()
     end)
 
     mod.exports.engine = engine
