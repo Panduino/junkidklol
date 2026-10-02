@@ -1,0 +1,16 @@
+{
+  "id": "rtc_untamed_nationaldex_compat",
+  "name": "RTC + Untamed + National Dex Compatibility",
+  "version": "0.1.0",
+  "api": 2,
+  "entry": "main.lua",
+  "profile": "gameplay",
+  "category": "GAMEPLAY",
+  "games": ["firered", "leafgreen"],
+  "permissions": ["engine_internals"],
+  "dependencies": [],
+  "optional_dependencies": ["RealTimeClockTest", "untamed_advanced", "national_dex_gen3"],
+  "conflicts": [],
+  "description": "Compatibility layer for RealTimeClockTest, Untamed Advanced, and National Dex Gen 3. Replaces Untamed's visible wild encounter source with HGSS-style Kanto morning/day/night tables covering National Dex #1-493.",
+  "github": "Panduino/junkidklol"
+}
