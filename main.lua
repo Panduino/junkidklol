@@ -68,12 +68,12 @@ return function(mod)
     { id="FR_ROUTE_25", habitat="forest", min=8, max=14, gen=1, base={morning={16,69,48,63,17,70},day={16,69,63,17,70},night={163,69,48,63,164,70}} },
     { id="FR_ROUTE_28", habitat="mountain", min=39, max=43, gen=4, base={morning={77,114,232,217,78,84,85},day={77,114,232,217,78,84,85},night={77,114,232,217,215,78}} },
     { id="FR_VIRIDIAN_FOREST", habitat="forest", min=3, max=8, gen=4, base={morning={10,11,12,13,14,15,16,17,25,325,322,406,455},day={10,11,13,14,16,17,25,325,322,406,455},night={163,164,25,325,322,406,455}} },
-    { id="FR_DIGLETTS_CAVE", habitat="cave", min=13, max=29, gen=4, base={morning={50,51,359,296,436,433},day={50,51,359,296,436,433},night={50,51,359,296,436,433}} },
-    { id="FR_MT_MOON_1F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,28,35,359,296,436,433},day={41,74,27,46,28,35,359,296,436,433},night={41,74,27,46,28,35,359,296,436,433}} },
-    { id="FR_MT_MOON_B1F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,28,35,359,296,436,433},day={41,74,27,46,28,35,359,296,436,433},night={41,74,27,46,28,35,359,296,436,433}} },
-    { id="FR_MT_MOON_B2F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,28,35,359,296,436,433},day={41,74,27,46,28,35,359,296,436,433},night={41,74,27,46,28,35,359,296,436,433}} },
-    { id="FR_ROCK_TUNNEL_1F", habitat="cave", min=8, max=14, gen=4, base={morning={104,74,66,41,67,359,296,436,433},day={104,74,66,41,67,359,296,436,433},night={104,74,66,41,67,359,296,436,433}} },
-    { id="FR_ROCK_TUNNEL_B1F", habitat="cave", min=10, max=16, gen=4, base={morning={74,104,95,41,105,115,359,296,436,433},day={74,104,95,41,105,115,359,296,436,433},night={74,104,95,41,105,115,359,296,436,433}} },
+    { id="FR_DIGLETTS_CAVE", habitat="cave", min=13, max=29, gen=4, base={morning={50,51},day={50,51},night={50,51}} },
+    { id="FR_MT_MOON_1F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,28,35},day={41,74,27,46,28,35},night={41,74,27,46,28,35}} },
+    { id="FR_MT_MOON_B1F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,28,35},day={41,74,27,46,28,35},night={41,74,27,46,28,35}} },
+    { id="FR_MT_MOON_B2F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,28,35},day={41,74,27,46,28,35},night={41,74,27,46,28,35}} },
+    { id="FR_ROCK_TUNNEL_1F", habitat="cave", min=8, max=14, gen=4, base={morning={104,74,66,41,67,296,436,433},day={104,74,66,41,67,296,436,433},night={104,74,66,41,67,296,436,433}} },
+    { id="FR_ROCK_TUNNEL_B1F", habitat="cave", min=10, max=16, gen=4, base={morning={74,104,95,41,105,115,296,436,433},day={74,104,95,41,105,115,296,436,433},night={74,104,95,41,105,115,296,436,433}} },
     { id="FR_POWER_PLANT", habitat="electric", min=20, max=35, gen=4, base={morning={81,100,25,125},day={81,100,25,125},night={81,100,125,479}} },
     { id="FR_POKEMON_TOWER_1F", habitat="ghost", min=20, max=28, gen=2, base={morning={41,92,93,200},day={41,92,93,200},night={92,93,200,355}} },
     { id="FR_POKEMON_TOWER_2F", habitat="ghost", min=21, max=29, gen=2, base={morning={92,93,200,355},day={92,93,200,355},night={92,93,200,355}} },
@@ -216,6 +216,19 @@ return function(mod)
     1,4,7,60,83,98,102,106,108,116,122,123,124,126,127,131,133,137,138,140,142,143,147,152,155,158,176,177,179,183,185,190,191,193,201,203,204,206,207,209,211,213,214,220,222,223,225,226,227,234,235,241,246,252,255,258,261,263,265,270,273,276,278,280,283,285,287,290,293,299,300,302,303,304,307,309,311,312,313,314,316,318,320,324,327,328,331,333,335,336,337,338,339,341,343,345,347,349,351,352,353,357,361,363,366,369,370,371,374,387,390,393,396,399,401,403,408,410,412,415,417,418,420,422,425,427,431,434,441,442,443,447,449,451,453,456,459
   }
 
+  -- Minimum area level for stronger family representatives. This keeps
+  -- generated coverage from putting late-game power on early Kanto routes.
+  local MIN_AREA_LEVEL = {
+    [106]=24,[115]=24,[123]=24,[124]=24,[126]=24,[127]=24,[131]=30,
+    [142]=30,[143]=24,[176]=18,[185]=18,[200]=18,[203]=18,[212]=28,
+    [214]=24,[217]=28,[227]=28,[232]=28,[234]=20,[241]=24,[246]=28,
+    [289]=30,[302]=24,[303]=24,[306]=30,[308]=24,[310]=24,[324]=24,
+    [330]=30,[334]=30,[335]=24,[336]=24,[337]=24,[338]=24,[344]=24,
+    [346]=24,[348]=24,[351]=20,[352]=20,[357]=24,[359]=30,[369]=30,
+    [371]=24,[374]=28,[408]=24,[410]=24,[442]=24,[443]=24,[447]=20,
+    [449]=20,[451]=20,[459]=20,
+  }
+
   local extraAssignments = nil
 
   local function buildExtraAssignments(Pokemon)
@@ -232,7 +245,9 @@ return function(mod)
         local maps = HABITAT_MAP[habitat] or HABITAT_MAP.field
         local bestId, bestPeriod, bestLoad = nil, nil, math.huge
         for _, id in ipairs(maps) do
-          if PROFILE_BY_ID[id] then
+          local candidate = PROFILE_BY_ID[id]
+          local minArea = MIN_AREA_LEVEL[nat] or 0
+          if candidate and candidate.max >= minArea then
             for _, period in ipairs(PERIODS) do
               local score = load[id][period]
               if score < bestLoad then bestId, bestPeriod, bestLoad = id, period, score end
