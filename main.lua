@@ -389,7 +389,30 @@ return function(mod)
     engine.Encounters.tableFor = function(mapId, ...)
       local profile = mapId and PROFILE_BY_ID[mapId]
       if profile then
-        return buildTable(profile, currentPeriod(), Pokemon)
+        local result = buildTable(profile, currentPeriod(), Pokemon)
+
+        -- Unown can very rarely appear on any numbered Kanto route.
+        -- Resolve this per spawn request instead of taking a normal table slot.
+        if profile.id:match("^FR_ROUTE_") and math.random(1000) == 1 then
+          local unown = entry(201, profile.min, profile.max)
+          local rare = {}
+          if result.land then
+            rare.land = { rate = result.land.rate, slots = {} }
+            for i = 1, math.max(1, #result.land.slots) do
+              rare.land.slots[i] = unown
+            end
+          end
+          if result.water then
+            rare.water = { rate = result.water.rate, slots = {} }
+            for i = 1, math.max(1, #result.water.slots) do
+              rare.water.slots[i] = unown
+            end
+          end
+          if result.fishing then rare.fishing = result.fishing end
+          return rare
+        end
+
+        return result
       end
       return rawTableFor(mapId, ...)
     end
