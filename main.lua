@@ -1,6 +1,10 @@
 return function(mod)
   if mod.generation ~= 3 then return end
 
+  mod.options:define({
+    { key = "debug", label = "DEBUG", type = "toggle", default = false },
+  })
+
   local REQUIRED = {
     "RealTimeClockTest",
     "untamed_advanced",
@@ -550,8 +554,9 @@ return function(mod)
       -- FR_POKEMON_TOWER_7F). Map.current is not a map-id field.
       local mapId = session and session.map
       local state = session and darkraiState(session)
+      local debug = mod.options:get("debug") == true
       local shouldShow = session and state and session.game_cleared == true
-        and state.darkraiTowerTriggered ~= true and darkraiTowerTime()
+        and state.darkraiTowerTriggered ~= true and (debug or darkraiTowerTime())
         and mapId == TOWER_7F and not darkraiSceneBusy
 
       if not shouldShow then clearTowerActor(); return end
