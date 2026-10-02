@@ -794,6 +794,8 @@ return function(mod)
 local FLAG_HIDE_ONE_ISLAND_BILL = 0x71
 local FLAG_HIDE_ONE_ISLAND_POKECENTER_BILL = 0x72
 local FLAG_SYS_CAN_LINK_WITH_RS = 0x844
+local FLAG_RECOVERED_SAPPHIRE = 0x2DC
+local FLAG_GOT_RUBY = 0x2DD
     local LEGENDARY_UNLOCK = { 144, 145, 146, 243, 244, 245 }
     local Dex = require("src.core.game3.dex")
     local MysteryGift = require("src.core.game3.mystery_gift")
@@ -830,8 +832,22 @@ local FLAG_SYS_CAN_LINK_WITH_RS = 0x844
       session.vars[VAR_MAP_SCENE_VERMILION_CITY] = 3
       session.vars[VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F] = 6
       session.flags = session.flags or {}
+      local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
+      local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
+      if okSpace and okFlags and Space and Flags and Space.store then
+        local ctx = Space.vm and Space.vm.ctx or nil
+        Flags.setFlag(Space.store, ctx, FLAG_HIDE_ONE_ISLAND_BILL, true)
+        Flags.setFlag(Space.store, ctx, FLAG_HIDE_ONE_ISLAND_POKECENTER_BILL, true)
+        Flags.setFlag(Space.store, ctx, FLAG_RECOVERED_SAPPHIRE, true)
+        Flags.setFlag(Space.store, ctx, FLAG_GOT_RUBY, true)
+        Flags.setFlag(Space.store, ctx, FLAG_SYS_CAN_LINK_WITH_RS, true)
+        Flags.setVar(Space.store, ctx, VAR_MAP_SCENE_VERMILION_CITY, 3)
+        Flags.setVar(Space.store, ctx, VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 6)
+      end
       session.flags[FLAG_HIDE_ONE_ISLAND_BILL] = true
       session.flags[FLAG_HIDE_ONE_ISLAND_POKECENTER_BILL] = true
+      session.flags[FLAG_RECOVERED_SAPPHIRE] = true
+      session.flags[FLAG_GOT_RUBY] = true
       session.flags[FLAG_SYS_CAN_LINK_WITH_RS] = true
     end
 
