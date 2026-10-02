@@ -561,7 +561,7 @@ return function(mod)
 
     local function darkraiTowerTime()
       local hour = tonumber(os.date("*t").hour) or 0
-      return hour >= 23 or hour < 2
+      return hour >= 23 or hour < 1
     end
 
     local function addDarkraiRoamer(session)
