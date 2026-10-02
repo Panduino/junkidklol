@@ -18,6 +18,7 @@ return function(mod)
       return C:id("items", name)
     end
 
+    local MASTER_BALL = item("ITEM_MASTER_BALL")
     local POKE_BALL = item("ITEM_POKE_BALL")
     local GREAT_BALL = item("ITEM_GREAT_BALL")
     local ULTRA_BALL = item("ITEM_ULTRA_BALL")
@@ -33,6 +34,7 @@ return function(mod)
     local ICE_HEAL = item("ITEM_ICE_HEAL")
     local FULL_HEAL = item("ITEM_FULL_HEAL")
     local REVIVE = item("ITEM_REVIVE")
+    local MAX_REVIVE = item("ITEM_MAX_REVIVE")
     local REPEL = item("ITEM_REPEL")
     local SUPER_REPEL = item("ITEM_SUPER_REPEL")
     local MAX_REPEL = item("ITEM_MAX_REPEL")
@@ -105,9 +107,19 @@ return function(mod)
       if tier >= 4 then
         append(out, seen, MAX_POTION)
         append(out, seen, FULL_RESTORE)
+        append(out, seen, MAX_REVIVE)
+        append(out, seen, MASTER_BALL)
       end
 
       return out
+    end
+
+    local ItemsData = require("src.core.game3.items_data")
+    local rawInfo = ItemsData.info
+    ItemsData.info = function(id)
+      local info = rawInfo(id)
+      if info and id == MASTER_BALL then info.price = 15000 end
+      return info
     end
 
     local rawItemsFor = Marts.itemsFor
