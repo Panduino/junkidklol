@@ -24,6 +24,15 @@ return function(mod)
     DARK = 17,
   }
 
+  mod.options:define({
+    { key = "debug_darkrai_roamer", label = "DEBUG DARKRAI ROAMER", type = "toggle", default = false },
+  })
+
+  local function debugDarkraiRoamer()
+    local ok, value = pcall(function() return mod.options:get("debug_darkrai_roamer") end)
+    return ok and value == true
+  end
+
   local PERIODS = { "morning", "day", "night" }
   local PERIOD_START = { morning = 4, day = 10, night = 18 }
 
@@ -445,6 +454,16 @@ return function(mod)
       Roamer.tryEncounter = function(session, mapId, terrain)
         local group = session and session.roamer
         if not isMulti(group) then return rawTryEncounter(session, mapId, terrain) end
+
+        if debugDarkraiRoamer() and type(mapId) == "string" and mapId:match("^FR_ROUTE_") then
+          for _, beast in ipairs(group.beasts) do
+            if beast.darkrai and beast.active then
+              beast.map = mapId
+              return withBeast(session, beast, rawTryEncounter, mapId, terrain)
+            end
+          end
+        end
+
         local candidates = {}
         for _, beast in ipairs(group.beasts) do
           if beast.active
@@ -491,6 +510,16 @@ return function(mod)
     -- collision/A-press battle resolves to the same persistent individual.
     if engine.roamerAt and not engine._groupedRoamerOWEInstalled then
       local visibleRoamer = nil
+      local forceVisibleDarkraiRoll = false
+      local rawUntamedRandom = engine.random
+
+      engine.random = function(...)
+        if forceVisibleDarkraiRoll then
+          forceVisibleDarkraiRoll = false
+          return 0
+        end
+        return rawUntamedRandom(...)
+      end
 
       engine.roamerAt = function(index)
         if index ~= 0 then return nil end
@@ -530,6 +559,9 @@ return function(mod)
           level = enc.level,
           foe = enc.foe,
         }
+        if debugDarkraiRoamer() and chosen and chosen.darkrai then
+          forceVisibleDarkraiRoll = true
+        end
         return enc.species, enc.level, enc.foe
       end
 
