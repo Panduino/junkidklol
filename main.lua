@@ -830,21 +830,20 @@ return function(mod)
       return beast
     end
 
+    local DARKRAI_NPC_ID = 126
+
     local function clearTowerActor()
-      if towerActor then
-        towerActor.active = false
-        towerActor.oweType = nil
-        towerActor.species = nil
-        towerActor.engineSpecies = nil
-        towerActor.draw = nil
-        towerActor = nil
+      if Objects._byId and Objects._byId[DARKRAI_NPC_ID] then
+        Objects._byId[DARKRAI_NPC_ID] = nil
+        for i = #(Objects._order or {}), 1, -1 do
+          if Objects._order[i] == DARKRAI_NPC_ID then table.remove(Objects._order, i) end
+        end
       end
+      towerActor = nil
     end
 
     local function showTowerDarkrai()
       local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-      -- Runtime session.map is the canonical Gen 3 map id (for example
-      -- FR_POKEMON_TOWER_7F). Map.current is not a map-id field.
       local mapId = session and session.map
       local state = session and darkraiState(session)
       local shouldShow = session and state and session.game_cleared == true
@@ -852,25 +851,13 @@ return function(mod)
         and mapId == TOWER_7F and not darkraiSceneBusy
 
       if not shouldShow then clearTowerActor(); return end
-      if towerActor and towerActor.active then return end
+      if towerActor and Objects._byId and Objects._byId[DARKRAI_NPC_ID] == towerActor then return end
+      clearTowerActor()
+      if not Objects._byId or not Objects._order then return end
 
-      if engine.Owe and engine.Owe.despawnAll then
-        engine.Owe.despawnAll("generated", false)
-      end
-
-      -- Use a normal Untamed actor slot so the apparition remains visible even
-      -- when the follower slot is reserved/active. It is deliberately not an
-      -- OWE, so Untamed will neither move it nor start a wild encounter from it.
-      local actor
-      for i = 2, #(engine.actors or {}) do
-        local candidate = engine.actors[i]
-        if candidate and not candidate.active then
-          actor = candidate
-          break
-        end
-      end
-      if not actor then return end
-
+      -- This is a regular field NPC.  The graphics id uses Untamed Advanced's
+      -- own serialized sprite format, so its OwSprites.draw hook renders
+      -- Darkrai from the exact same atlas and palette as Untamed followers.
       local personality = engine.random32 and engine.random32() or 0
       local atlasSpecies = engine.expansionSpecies(DARKRAI_SPECIES, personality)
       if not atlasSpecies then return end
@@ -878,32 +865,26 @@ return function(mod)
       local sheet, row = engine.Gfx.sheetFor(atlasSpecies, female, false)
       if not sheet then return end
 
-      actor.active = true
-      actor.oweType = nil
-      actor.noDespawn = true
-      actor.species = atlasSpecies
-      actor.engineSpecies = DARKRAI_SPECIES
-      actor.personality = personality
-      actor.female = female
-      actor.level = 50
-      actor.sheet, actor.palRow = sheet, row
-      actor.cellX, actor.cellY = 11, 4
-      actor.targetX, actor.targetY = 11, 4
-      actor.initX, actor.initY = 11, 4
-      actor.px, actor.py = 11 * 16, 4 * 16
-      actor.elevation = engine.elevationAt and engine.elevationAt(11, 4) or 3
-      actor.currentElevation = actor.elevation
-      actor.facing = "down"
-      actor.moving, actor.visible, actor.hidden, actor.invisible = false, true, false, false
-      actor.draw = function(a, sx, sy)
-        -- Keep the apparition visually pinned without touching Untamed's
-        -- internal action state; its updater expects those fields to remain valid.
-        a.cellX, a.cellY = 11, 4
-        a.targetX, a.targetY = 11, 4
-        a.px, a.py = 11 * 16, 4 * 16
-        a.moving, a.facing = false, "down"
-        return engine.Gfx.draw(a.sheet, 0, false, a.palRow, sx, sy)
-      end
+      -- Untamed follower face-down frame is frame 0.
+      local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
+      local x, y = 11, 4
+      local actor = {
+        localId=DARKRAI_NPC_ID, originLocalId=DARKRAI_NPC_ID,
+        originMapId=session.map, cellX=x, cellY=y, px=x*16, py=y*16,
+        homeX=x, homeY=y, targetX=x, targetY=y,
+        facing="down", sprite=graphicsId, graphicsId=graphicsId,
+        elevation=engine.elevationAt and engine.elevationAt(x, y) or 3,
+        currentElevation=engine.elevationAt and engine.elevationAt(x, y) or 3,
+        movementType=0x09, movement="STAY", range="DOWN",
+        radius={x=0,y=0}, rangeX=0, rangeY=0,
+        visible=true, hidden=false, invisible=false, frozen=true,
+        passable=false, moving=false, progress=0, stepFrames=16,
+        scriptBusy=false,
+        def={ localId=DARKRAI_NPC_ID, x=x, y=y, graphicsId=graphicsId,
+          movementType=0x09, facing="down" },
+      }
+      Objects._byId[DARKRAI_NPC_ID] = actor
+      Objects._order[#Objects._order + 1] = DARKRAI_NPC_ID
       towerActor = actor
     end
 
