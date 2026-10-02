@@ -565,14 +565,20 @@ return function(mod)
       end
       if not actor then return end
 
-      local sheet, row = engine.Gfx.sheetFor(DARKRAI_NAT, false, false)
+      local personality = engine.random32 and engine.random32() or 0
+      local atlasSpecies = engine.expansionSpecies(DARKRAI_SPECIES, personality)
+      if not atlasSpecies then return end
+      local female = engine.femaleFor and engine.femaleFor(DARKRAI_SPECIES, personality) or false
+      local sheet, row = engine.Gfx.sheetFor(atlasSpecies, female, false)
       if not sheet then return end
 
       actor.active = true
       actor.oweType = "manual"
       actor.noDespawn = true
-      actor.species = DARKRAI_NAT
+      actor.species = atlasSpecies
       actor.engineSpecies = DARKRAI_SPECIES
+      actor.personality = personality
+      actor.female = female
       actor.level = 50
       actor.sheet, actor.palRow = sheet, row
       actor.cellX, actor.cellY = 11, 4
