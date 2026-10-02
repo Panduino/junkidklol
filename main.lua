@@ -410,11 +410,18 @@ return function(mod)
 
       Roamer.init = function(session, starterChoice)
         if not session then return false end
+        local darkrai
+        if isMulti(session.roamer) then
+          for _, beast in ipairs(session.roamer.beasts) do
+            if beast.darkrai then darkrai = beast break end
+          end
+        end
         local beasts = {}
         for _, starter in ipairs({ 1, 0, 2 }) do
           rawInit(session, starter)
           beasts[#beasts + 1] = session.roamer
         end
+        if darkrai then beasts[#beasts + 1] = darkrai end
         session.roamer = { active = true, beasts = beasts }
         return true
       end
@@ -441,6 +448,7 @@ return function(mod)
         local candidates = {}
         for _, beast in ipairs(group.beasts) do
           if beast.active
+            and (not beast.darkrai or currentPeriod() == "night")
             and Roamer.normalizeMapId(beast.map) == Roamer.normalizeMapId(mapId) then
             candidates[#candidates + 1] = beast
           end
@@ -463,12 +471,160 @@ return function(mod)
         local species = foeState and (foeState.species or foeState.speciesId)
         for _, beast in ipairs(group.beasts) do
           if beast.active and beast.species == species then
-            return withBeast(session, beast, rawBattleEnd, foeState, battleResult, endReason)
+            local result = withBeast(session, beast, rawBattleEnd, foeState, battleResult, endReason)
+            if beast.darkrai and battleResult ~= "caught" and not beast.active then
+              beast.active = true
+              beast.hp = beast.maxHp
+              beast.status, beast.statusNum = 0, 0
+              withBeast(session, beast, rawJump)
+            end
+            return result
           end
         end
       end
 
       Roamer._allBeastsInstalled = true
+    end
+
+    local DARKRAI_NAT = 491
+    local DARKRAI_SPECIES = DARKRAI_NAT + 64
+    local TOWER_7F = "FR_POKEMON_TOWER_7F"
+    local towerActor = nil
+    local darkraiSceneBusy = false
+
+    local function darkraiState(session)
+      session.modData = session.modData or {}
+      session.modData[mod.id] = session.modData[mod.id] or {}
+      return session.modData[mod.id]
+    end
+
+    local function darkraiTowerTime()
+      local hour = tonumber(os.date("*t").hour) or 0
+      return hour >= 23 or hour < 1
+    end
+
+    local function addDarkraiRoamer(session)
+      local group = session.roamer
+      if type(group) ~= "table" or type(group.beasts) ~= "table" then
+        group = { active = true, beasts = {} }
+        session.roamer = group
+      end
+      for _, beast in ipairs(group.beasts) do
+        if beast.darkrai then return beast end
+      end
+
+      local mon = Roamer.generateMon(DARKRAI_SPECIES, 50)
+      local beast = {
+        active = true,
+        darkrai = true,
+        species = DARKRAI_SPECIES,
+        level = 50,
+        hp = mon.hp or mon.maxHp,
+        maxHp = mon.maxHp or mon.hp,
+        status = 0,
+        statusNum = 0,
+        pid = mon.pid,
+        ivs = mon.ivs,
+        moves = mon.moves,
+        pp = mon.pp,
+        map = Roamer.LOCATIONS[(math.random(#Roamer.LOCATIONS))],
+      }
+      group.beasts[#group.beasts + 1] = beast
+      return beast
+    end
+
+    local function clearTowerActor()
+      if towerActor then
+        towerActor.active = false
+        towerActor.oweType = nil
+        towerActor.species = nil
+        towerActor.engineSpecies = nil
+        towerActor.draw = nil
+        towerActor = nil
+      end
+    end
+
+    local function showTowerDarkrai()
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      local mapId = engine.Map and engine.Map.current or (session and session.map)
+      local state = session and darkraiState(session)
+      local shouldShow = session and state and session.game_cleared == true
+        and state.darkraiTowerTriggered ~= true and darkraiTowerTime()
+        and mapId == TOWER_7F and not darkraiSceneBusy
+
+      if not shouldShow then clearTowerActor(); return end
+      if towerActor and towerActor.active then return end
+
+      if engine.Owe and engine.Owe.despawnAll then
+        engine.Owe.despawnAll("generated", false)
+      end
+
+      local actor
+      for i = 2, #(engine.actors or {}) do
+        if not engine.actors[i].active then actor = engine.actors[i] break end
+      end
+      if not actor then return end
+
+      local sheet, row = engine.Gfx.sheetFor(DARKRAI_NAT, false, false)
+      if not sheet then return end
+
+      actor.active = true
+      actor.oweType = "manual"
+      actor.noDespawn = true
+      actor.species = DARKRAI_NAT
+      actor.engineSpecies = DARKRAI_SPECIES
+      actor.level = 50
+      actor.sheet, actor.palRow = sheet, row
+      actor.cellX, actor.cellY = 11, 4
+      actor.targetX, actor.targetY = 11, 4
+      actor.initX, actor.initY = 11, 4
+      actor.px, actor.py = 11 * 16, 4 * 16
+      actor.elevation = engine.elevationAt and engine.elevationAt(11, 4) or 3
+      actor.currentElevation = actor.elevation
+      actor.facing = "down"
+      actor.moving, actor.visible, actor.hidden, actor.invisible = false, true, false, false
+      actor.draw = function(a, sx, sy)
+        return engine.Gfx.draw(a.sheet, 0, false, a.palRow, sx, sy)
+      end
+      towerActor = actor
+    end
+
+    if engine.Field and not engine.Field._darkraiTowerInstalled then
+      local rawInteract = engine.Field.interact
+      engine.Field.interact = function(game, ...)
+        if towerActor and towerActor.active and not darkraiSceneBusy then
+          local P = engine.Player
+          local dx = ({ left=-1, right=1 })[P.facing] or 0
+          local dy = ({ up=-1, down=1 })[P.facing] or 0
+          if P.cellX + dx == towerActor.cellX and P.cellY + dy == towerActor.cellY then
+            local session = engine.Runtime.getSession()
+            local Message = require("src.ui.game3.message")
+            local Fade = require("src.ui.game3.fade")
+            darkraiSceneBusy = true
+            engine.Field.locked = true
+
+            Message.show("A cold presence hangs in the air...", function()
+              Message.show("You suddenly feel very tired...", function()
+                Fade.begin(Fade.MODE.TO_BLACK, 1, function()
+                  clearTowerActor()
+                  local state = darkraiState(session)
+                  state.darkraiTowerTriggered = true
+                  addDarkraiRoamer(session)
+                  Fade.begin(Fade.MODE.FROM_BLACK, 1, function()
+                    Message.show("The POKEMON vanished!", function()
+                      engine.Field.locked = false
+                      darkraiSceneBusy = false
+                    end)
+                  end)
+                end)
+              end)
+            end)
+            return true
+          end
+        end
+        return rawInteract(game, ...)
+      end
+      engine.Field._darkraiTowerInstalled = true
     end
 
     local rawTableFor = engine.Encounters.tableFor
@@ -518,8 +674,14 @@ return function(mod)
       engine.invalidateMapCaches()
     end
 
-    mod.events:on("map.entered", refreshPeriod)
-    mod.events:on("world.stepped", refreshPeriod)
+    mod.events:on("map.entered", function(ev)
+      refreshPeriod()
+      showTowerDarkrai()
+    end)
+    mod.events:on("world.stepped", function(ev)
+      refreshPeriod()
+      showTowerDarkrai()
+    end)
 
     mod.exports.engine = engine
     mod.exports.period = currentPeriod
