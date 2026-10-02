@@ -41,15 +41,15 @@ return function(mod)
   -- The base entries mirror recognizable HGSS Kanto encounters. The
   -- generated entries add Gen 1-4 habitat coverage around those anchors.
   local PROFILES = {
-    { id="FR_ROUTE_1", habitat="field", min=2, max=5, gen=1, base={morning={16,19,161,263},day={16,19,161,263},night={19,163,264,287}} },
-    { id="FR_ROUTE_2", habitat="forest", min=3, max=7, gen=1, base={morning={10,13,16,25},day={13,14,16,25},night={163,164,167,25}} },
-    { id="FR_ROUTE_3", habitat="field", min=4, max=9, gen=1, base={morning={16,19,21,29},day={16,19,21,29},night={19,163,29,41}} },
-    { id="FR_ROUTE_4", habitat="mountain", min=5, max=10, gen=1, base={morning={21,19,41,50},day={21,19,23,37},night={19,23,52,93}} },
-    { id="FR_ROUTE_5", habitat="urban", min=12, max=16, gen=2, base={morning={16,69,63,25},day={16,69,63,25},night={43,52,88,93}} },
+    { id="FR_ROUTE_1", habitat="field", min=2, max=6, gen=1, base={morning={16,19,161,162},day={16,19,161,162},night={19,163}} },
+    { id="FR_ROUTE_2", habitat="forest", min=3, max=10, gen=1, base={morning={10,16,11,12,17,167,165,14,13,15,166},day={16,10,12,17,13,15,165},night={163,167,164,168,14,13,15}} },
+    { id="FR_ROUTE_3", habitat="field", min=5, max=10, gen=1, base={morning={21,19,23,39,24},day={21,19,23,39,24},night={19,41,23,39,24}} },
+    { id="FR_ROUTE_4", habitat="mountain", min=5, max=10, gen=1, base={morning={21,19,23,39,24},day={21,19,23,39,24},night={19,41,23,39,24}} },
+    { id="FR_ROUTE_5", habitat="urban", min=12, max=15, gen=2, base={morning={16,69,52,63},day={16,69,52,63},night={43,52,69,44,63}} },
     { id="FR_ROUTE_6", habitat="field", min=12, max=16, gen=2, base={morning={16,69,43,63},day={16,69,52,63},night={19,52,163,200}} },
-    { id="FR_ROUTE_7", habitat="urban", min=15, max=20, gen=2, base={morning={20,21,37,52},day={19,21,37,52},night={19,52,198,228}} },
-    { id="FR_ROUTE_8", habitat="urban", min=14, max=20, gen=2, base={morning={63,64,58,37},day={63,64,58,37},night={64,93,163,200}} },
-    { id="FR_ROUTE_9", habitat="field", min=13, max=18, gen=2, base={morning={21,20,19,57},day={21,20,22,57},night={20,19,57,195}} },
+    { id="FR_ROUTE_7", habitat="urban", min=15, max=19, gen=2, base={morning={19,21,58,20,52,37,53},day={19,21,58,20,52,37,53},night={198,19,58,20,228,52,37,53}} },
+    { id="FR_ROUTE_8", habitat="urban", min=15, max=19, gen=2, base={morning={17,63,58,64,52,37},day={17,63,58,64,52,37},night={164,93,63,58,64,52,37}} },
+    { id="FR_ROUTE_9", habitat="field", min=13, max=15, gen=2, base={morning={56,19,21,20,22,57},day={56,19,21,20,22,57},night={19,56,20,57}} },
     { id="FR_ROUTE_10", habitat="electric", min=15, max=20, gen=2, base={morning={21,100,20,125},day={21,100,20,125},night={195,100,20,125}} },
     { id="FR_ROUTE_11", habitat="urban", min=13, max=18, gen=2, base={morning={20,96,100,97},day={20,96,100,97},night={20,97,100,163}} },
     { id="FR_ROUTE_12", habitat="marsh", min=18, max=25, gen=2, base={morning={16,118,43,114},day={16,118,43,114},night={163,195,200,118}} },
@@ -57,16 +57,16 @@ return function(mod)
     { id="FR_ROUTE_14", habitat="field", min=22, max=27, gen=2, base={morning={30,33,17,187},day={30,33,17,188},night={30,33,164,195}} },
     { id="FR_ROUTE_15", habitat="field", min=22, max=27, gen=2, base={morning={30,33,17,113},day={30,33,17,113},night={30,33,164,195}} },
     { id="FR_ROUTE_16", habitat="urban", min=26, max=31, gen=2, base={morning={88,21,110,218},day={88,21,110,218},night={88,198,110,218}} },
-    { id="FR_ROUTE_17", habitat="field", min=27, max=33, gen=2, base={morning={88,20,42,109},day={88,20,42,109},night={88,89,109,218}} },
-    { id="FR_ROUTE_18", habitat="field", min=27, max=33, gen=2, base={morning={84,85,20,21},day={84,85,20,21},night={84,85,164,198}} },
+    { id="FR_ROUTE_17", habitat="field", min=27, max=32, gen=2, base={morning={88,22,89,218},day={218,22,88,89},night={88,89,218}} },
+    { id="FR_ROUTE_18", habitat="field", min=26, max=30, gen=2, base={morning={88,22,89,218},day={88,22,89,218},night={88,89,218}} },
     { id="FR_ROUTE_19", habitat="water", min=30, max=35, gen=2, water=true, base={morning={72,73,129,170},day={72,73,129,170},night={73,90,120,170}} },
     { id="FR_ROUTE_20", habitat="water", min=30, max=36, gen=2, water=true, base={morning={72,73,129,90},day={72,73,120,170},night={73,90,120,170}} },
     { id="FR_ROUTE_21", habitat="water", min=20, max=32, gen=4, water=true, base={morning={114,54,72,120},day={114,54,72,120},night={114,73,120,170}} },
     { id="FR_ROUTE_22", habitat="mountain", min=3, max=8, gen=1, base={morning={21,19,32,56},day={21,19,32,56},night={19,20,56,93}} },
     { id="FR_ROUTE_23", habitat="mountain", min=25, max=35, gen=2, base={morning={21,22,28,105},day={21,22,28,105},night={20,24,215,228}} },
     { id="FR_ROUTE_24", habitat="forest", min=8, max=14, gen=1, base={morning={16,69,63,10},day={16,69,63,10},night={19,43,92,93}} },
-    { id="FR_ROUTE_25", habitat="forest", min=8, max=15, gen=1, base={morning={16,69,63,63},day={16,69,63,63},night={19,52,93,198}} },
-    { id="FR_ROUTE_28", habitat="mountain", min=39, max=43, gen=4, base={morning={77,114,232,84},day={77,114,217,85},night={78,215,42,93}} },
+    { id="FR_ROUTE_25", habitat="forest", min=8, max=14, gen=1, base={morning={16,69,48,63,17,70},day={16,69,63,17,70},night={163,69,48,63,164,70}} },
+    { id="FR_ROUTE_28", habitat="mountain", min=39, max=43, gen=4, base={morning={77,114,232,217,78,84,85},day={77,114,232,217,78,84,85},night={77,114,232,217,215,78}} },
 
     { id="FR_VIRIDIAN_FOREST", habitat="forest", min=3, max=8, gen=1, base={morning={10,11,12,16},day={13,14,15,16},night={163,164,25,163}} },
     { id="FR_DIGLETTS_CAVE", habitat="cave", min=13, max=29, gen=2, base={morning={50,51,95,74},day={50,51,95,74},night={51,95,92,228}} },
@@ -179,7 +179,7 @@ return function(mod)
   end
 
   local function uniqueAppend(out, seen, e)
-    if not seen[e.species] and #out < 12 then
+    if not seen[e.species] then
       seen[e.species] = true
       out[#out + 1] = e
     end
@@ -190,59 +190,14 @@ return function(mod)
     if cache[key] then return cache[key] end
 
     local out, seen = {}, {}
-
-    local coverageNats = {}
-    for nat = 1, 493 do
-      if not isLegendaryOrMythical(nat) then
-        local speciesHome = homeForSpecies(nat, Pokemon)
-      local allMaps = HABITAT_MAP[speciesHome] or HABITAT_MAP.field
-      local gen = nat <= 151 and 1 or nat <= 251 and 2 or nat <= 386 and 3 or 4
-      local maps = {}
-      for _, id in ipairs(allMaps) do
-        local candidate = PROFILE_BY_ID[id]
-        if candidate and candidate.gen >= gen then maps[#maps + 1] = id end
-      end
-      if #maps == 0 then maps = allMaps end
-      local targetMap = ((nat - 1) % #maps) + 1
-      local targetPeriod = PERIODS[(math.floor((nat - 1) / #maps) % 3) + 1]
-        if gen <= profile.gen and maps[targetMap] == profile.id and targetPeriod == period then
-          coverageNats[#coverageNats + 1] = nat
-        end
-      end
-    end
-    table.sort(coverageNats)
-    for _, nat in ipairs(coverageNats) do
-      if #out >= 8 then break end
-      uniqueAppend(out, seen, entry(nat, profile.min, profile.max))
-    end
-
     local base = profile.base and profile.base[period] or {}
+
+    -- Keep the encounter count natural to the location. HGSS routes commonly
+    -- have only a few distinct species; do not pad every table to 12.
     for _, nat in ipairs(base) do
       if nat >= 1 and nat <= 493 and not isLegendaryOrMythical(nat) then
         uniqueAppend(out, seen, entry(nat, profile.min, profile.max))
       end
-    end
-
-    local scored = {}
-    for nat = 1, 493 do
-      local engineSpecies = nat <= 386 and nat or nat + 64
-      if not isLegendaryOrMythical(nat) and not seen[engineSpecies] then
-        local speciesHome = homeForSpecies(nat, Pokemon)
-        local score = (speciesHome == profile.habitat and 8 or 0) + periodBonus(nat, period, Pokemon)
-        local gen = nat <= 151 and 1 or nat <= 251 and 2 or nat <= 386 and 3 or 4
-        if gen <= profile.gen then score = score + 3 elseif gen == 4 and profile.gen >= 3 then score = score + 1 end
-        if profile.habitat == "rare" then score = score + (nat >= 144 and 4 or 0) end
-        if nat == 16 or nat == 19 or nat == 21 or nat == 20 or nat == 41 then score = score + 3 end
-        scored[#scored + 1] = {nat=nat,score=score}
-      end
-    end
-    table.sort(scored, function(a,b)
-      if a.score == b.score then return a.nat < b.nat end
-      return a.score > b.score
-    end)
-    for _, row in ipairs(scored) do
-      if #out >= 12 then break end
-      uniqueAppend(out, seen, entry(row.nat, profile.min, profile.max))
     end
 
     cache[key] = { land = { rate = 20, slots = out } }
@@ -310,7 +265,7 @@ return function(mod)
     mod.exports.engine = engine
     mod.exports.period = currentPeriod
     mod.exports.tables = PROFILES
-    mod.exports.fullNationalDexCoverage = true
+    mod.exports.fullNationalDexCoverage = false
     installed = true
     mod.log:info("RTC + Untamed + National Dex encounter compatibility installed")
     return true
