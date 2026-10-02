@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "api": 2,
   "entry": "main.lua",
-  "profile": "gameplay",
+  "profile": "overhaul",
   "category": "GAMEPLAY",
   "games": ["firered", "leafgreen"],
   "permissions": ["engine_internals"],
