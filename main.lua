@@ -824,8 +824,6 @@ local FLAG_GOT_RUBY = 0x2DD
         Seagallop._mysticTicketCompat = true
         local oldMenu = Seagallop.destinationMenu
         local oldSelected = Seagallop.selectedDestination
-        local oldFerryTask = Seagallop.ferryTask
-        local pendingNavel = false
 
         local function hasMysticTicket()
           local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
@@ -838,8 +836,6 @@ local FLAG_GOT_RUBY = 0x2DD
         Seagallop.destinationMenu = function(originId, page)
           local labels, top = oldMenu(originId, page)
           if hasMysticTicket() and page == 1 then
-            -- Page 2 normally ends in Other / Exit. Insert Navel Rock before
-            -- those controls, keeping every ordinary destination available.
             table.insert(labels, #labels, "NAVEL ROCK")
           end
           return labels, top
@@ -847,21 +843,9 @@ local FLAG_GOT_RUBY = 0x2DD
 
         Seagallop.selectedDestination = function(originId, page, result)
           if hasMysticTicket() and page == 1 and result == 3 then
-            pendingNavel = true
-            -- The stock script has no SEAGALLOP_NAVEL_ROCK switch case here.
-            -- Route through its Four Island case, then redirect only this trip.
-            return 4
+            return 9
           end
           return oldSelected(originId, page, result)
-        end
-
-        Seagallop.ferryTask = function(ctx, adapters, destId)
-          if pendingNavel and destId == 4 then
-            pendingNavel = false
-            return oldFerryTask(ctx, adapters, 9)
-          end
-          pendingNavel = false
-          return oldFerryTask(ctx, adapters, destId)
         end
       end
     end
