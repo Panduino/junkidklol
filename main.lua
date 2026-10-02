@@ -278,6 +278,22 @@ return function(mod)
     end
   end
 
+  local EARLY_EVOLUTION_REPLACEMENTS = {
+    [20]=19,[22]=21,[24]=23,[28]=27,[40]=39,[42]=41,[44]=43,[47]=46,
+    [49]=48,[55]=54,[57]=56,[61]=60,[67]=66,[70]=69,[75]=74,[89]=88,
+    [93]=92,[97]=96,[119]=118,[164]=163,[168]=167,[188]=187,[195]=194,
+    [262]=261,[264]=263,[271]=270,[274]=273,[279]=278,[284]=283,
+    [288]=287,[294]=293,[305]=304,[317]=316,[319]=318,[329]=328,
+    [342]=341,[397]=396,[400]=399,[404]=403,[419]=418,[423]=422,
+    [426]=425,[428]=427,[435]=434,[444]=443,[454]=453,[457]=456,
+  }
+
+  local function progressionSpecies(nat, profile)
+    if profile.max < 20 then
+      return EARLY_EVOLUTION_REPLACEMENTS[nat] or nat
+    end
+    return nat
+  end
   local function buildTable(profile, period, Pokemon)
     local key = profile.id .. "|" .. period
     if cache[key] then return cache[key] end
@@ -288,6 +304,7 @@ return function(mod)
     -- Keep the encounter count natural to the location. HGSS routes commonly
     -- have only a few distinct species; do not pad every table to 12.
     for _, nat in ipairs(base) do
+      nat = progressionSpecies(nat, profile)
       if nat >= 1 and nat <= 493 and not isLegendaryOrMythical(nat) then
         out[#out + 1] = entry(nat, profile.min, profile.max)
         seen[out[#out].species] = true
@@ -297,6 +314,7 @@ return function(mod)
     local additions = buildExtraAssignments(Pokemon)
     local extras = additions[profile.id] and additions[profile.id][period] or {}
     for _, nat in ipairs(extras) do
+      nat = progressionSpecies(nat, profile)
       if nat == 448 then nat = 447 end
       if nat == 376 then nat = 374 end
       uniqueAppend(out, seen, entry(nat, profile.min, profile.max))
