@@ -1,10 +1,6 @@
 return function(mod)
   if mod.generation ~= 3 then return end
 
-  mod.options:define({
-    { key = "debug", label = "DEBUG", type = "toggle", default = false },
-  })
-
   local REQUIRED = {
     "RealTimeClockTest",
     "untamed_advanced",
@@ -504,7 +500,7 @@ return function(mod)
 
     local function darkraiTowerTime()
       local hour = tonumber(os.date("*t").hour) or 0
-      return hour >= 23 or hour < 1
+      return hour >= 23 or hour < 2
     end
 
     local function addDarkraiRoamer(session)
@@ -554,13 +550,8 @@ return function(mod)
       -- FR_POKEMON_TOWER_7F). Map.current is not a map-id field.
       local mapId = session and session.map
       local state = session and darkraiState(session)
-      local debug = false
-      if mod.options and type(mod.options.get) == "function" then
-        local ok, value = pcall(function() return mod.options:get("debug") end)
-        debug = ok and value == true
-      end
       local shouldShow = session and state and session.game_cleared == true
-        and state.darkraiTowerTriggered ~= true and (debug or darkraiTowerTime())
+        and state.darkraiTowerTriggered ~= true and darkraiTowerTime()
         and mapId == TOWER_7F and not darkraiSceneBusy
 
       if not shouldShow then clearTowerActor(); return end
