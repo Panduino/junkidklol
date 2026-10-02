@@ -500,7 +500,7 @@ return function(mod)
 
     local function darkraiTowerTime()
       local hour = tonumber(os.date("*t").hour) or 0
-      return hour >= 23 or hour < 2
+      return hour >= 23 or hour < 1
     end
 
     local function addDarkraiRoamer(session)
@@ -589,9 +589,16 @@ return function(mod)
       actor.px, actor.py = 11 * 16, 4 * 16
       actor.elevation = engine.elevationAt and engine.elevationAt(11, 4) or 3
       actor.currentElevation = actor.elevation
-      actor.facing = "down"
+      actor.facing, actor.moveDir = "down", "down"
       actor.moving, actor.visible, actor.hidden, actor.invisible = false, true, false, false
+      actor.movementType = 0
+      actor.act, actor.anim, actor.animT = nil, nil, 0
       actor.draw = function(a, sx, sy)
+        a.cellX, a.cellY = 11, 4
+        a.targetX, a.targetY = 11, 4
+        a.px, a.py = 11 * 16, 4 * 16
+        a.moving, a.facing, a.moveDir = false, "down", "down"
+        a.act, a.anim, a.animT = nil, nil, 0
         return engine.Gfx.draw(a.sheet, 0, false, a.palRow, sx, sy)
       end
       towerActor = actor
