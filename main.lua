@@ -832,7 +832,8 @@ return function(mod)
       return beast
     end
 
-    local DARKRAI_NPC_ID = 126\n    local UntamedEngine = engine
+    local DARKRAI_NPC_ID = 126
+    local UntamedEngine = engine
 
     local function clearTowerActor()
       if Objects._byId and Objects._byId[DARKRAI_NPC_ID] then
