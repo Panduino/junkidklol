@@ -791,6 +791,9 @@ return function(mod)
     local FLAG_RECEIVED_MYSTIC_TICKET = 0x2A8
     local VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F = 0x4076
     local VAR_MAP_SCENE_VERMILION_CITY = 0x407E
+local FLAG_HIDE_ONE_ISLAND_BILL = 0x71
+local FLAG_HIDE_ONE_ISLAND_POKECENTER_BILL = 0x72
+local FLAG_SYS_CAN_LINK_WITH_RS = 0x844
     local LEGENDARY_UNLOCK = { 144, 145, 146, 243, 244, 245 }
     local Dex = require("src.core.game3.dex")
     local MysteryGift = require("src.core.game3.mystery_gift")
@@ -826,6 +829,10 @@ return function(mod)
       -- path can be exercised from an unfinished save.
       session.vars[VAR_MAP_SCENE_VERMILION_CITY] = 3
       session.vars[VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F] = 6
+      session.flags = session.flags or {}
+      session.flags[FLAG_HIDE_ONE_ISLAND_BILL] = true
+      session.flags[FLAG_HIDE_ONE_ISLAND_POKECENTER_BILL] = true
+      session.flags[FLAG_SYS_CAN_LINK_WITH_RS] = true
     end
 
     local function tryMysticTicketEvent()
