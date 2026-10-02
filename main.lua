@@ -621,10 +621,18 @@ return function(mod)
         engine.Owe.despawnAll("generated", false)
       end
 
-      -- Use Untamed's non-OWE slot for the apparition. Its collision code
-      -- explicitly excludes this slot from wild encounter triggering.
-      local actor = engine.FOLLOWER
-      if not actor or actor.active then return end
+      -- Use a normal Untamed actor slot so the apparition remains visible even
+      -- when the follower slot is reserved/active. It is deliberately not an
+      -- OWE, so Untamed will neither move it nor start a wild encounter from it.
+      local actor
+      for i = 2, #(engine.actors or {}) do
+        local candidate = engine.actors[i]
+        if candidate and not candidate.active then
+          actor = candidate
+          break
+        end
+      end
+      if not actor then return end
 
       local personality = engine.random32 and engine.random32() or 0
       local atlasSpecies = engine.expansionSpecies(DARKRAI_SPECIES, personality)
