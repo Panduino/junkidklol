@@ -322,7 +322,8 @@ return function(mod)
     mod.exports.engine = engine
     mod.exports.period = currentPeriod
     mod.exports.tables = PROFILES
-    mod.exports.fullNationalDexCoverage = true
+    mod.exports.fullNationalDexCoverage = false
+    mod.exports.fullEvolutionaryFamilyCoverage = true
     installed = true
     mod.log:info("RTC + Untamed + National Dex encounter compatibility installed")
     return true
