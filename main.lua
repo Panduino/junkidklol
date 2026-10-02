@@ -732,13 +732,13 @@ return function(mod)
     end
 
     local navelRockSailorInteract
+    local birthIslandSailorInteract
     local rawFieldInteract = Field.interact
     if not Field._fossilDealerInteractInstalled then
       Field.interact = function(game)
         local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-        if navelRockSailorInteract and navelRockSailorInteract(game, session) then
-          return true
-        end
+        if navelRockSailorInteract and navelRockSailorInteract(game, session) then return true end
+        if birthIslandSailorInteract and birthIslandSailorInteract(game, session) then return true end
         if labScientistAhead(session) and not Field.isLocked() then
           local state = extraFossilState(session)
           if state.pending then
@@ -788,15 +788,24 @@ return function(mod)
     end)
 
     local MYSTIC_TICKET = 370
+    local AURORA_TICKET = 371
     local FLAG_ENABLE_SHIP_NAVEL_ROCK = 0x84A
+    local FLAG_ENABLE_SHIP_BIRTH_ISLAND = 0x84B
     local FLAG_RECEIVED_MYSTIC_TICKET = 0x2A8
+    local FLAG_RECEIVED_AURORA_TICKET = 0x2A7
 local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
+    local FLAG_SHOWN_AURORA_TICKET = 0x2F1
     local VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F = 0x4076
     local VAR_MAP_SCENE_VERMILION_CITY = 0x407E
     local LEGENDARY_UNLOCK = { 144, 145, 146, 243, 244, 245 }
     local Dex = require("src.core.game3.dex")
     local MysteryGift = require("src.core.game3.mystery_gift")
     local mysticTicketBusy = false
+    local auroraTicketBusy = false
+
+    local function hasRayquaza(session)
+      return session and session.dex and Dex.isCaught(session.dex, 384) == true
+    end
 
     local function hasLegendarySet(session)
       if not session or not session.dex then return false end
@@ -821,6 +830,15 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
         local oldSelected = Seagallop.selectedDestination
         local oldFerryTask = Seagallop.ferryTask
         local pendingNavel = false
+        local pendingBirth = false
+
+        local function hasAuroraTicket()
+          local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+          local ctx = SpaceSea.vm and SpaceSea.vm.ctx or nil
+          return session and session.bag
+            and BagSea.get(session.bag, AURORA_TICKET) > 0
+            and FlagsSea.getFlag(SpaceSea.store, ctx, FLAG_ENABLE_SHIP_BIRTH_ISLAND) == true
+        end
 
         local function hasMysticTicket()
           local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
@@ -832,29 +850,42 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
 
         Seagallop.destinationMenu = function(originId, page)
           local labels, top = oldMenu(originId, page)
-          if hasMysticTicket() and page == 1 then
-            table.insert(labels, #labels, "NAVEL ROCK")
+          if page == 1 then
+            if hasMysticTicket() then table.insert(labels, #labels, "NAVEL ROCK") end
+            if hasAuroraTicket() then table.insert(labels, #labels, "BIRTH ISLAND") end
           end
           return labels, top
         end
 
         Seagallop.selectedDestination = function(originId, page, result)
-          if hasMysticTicket() and page == 1 and result == 4 then
-            pendingNavel = true
-            -- Return a destination the stock Sevii switch knows how to handle.
-            -- ferryTask redirects only this voyage to Navel Rock.
-            return 4
+          if page == 1 then
+            local nextResult = 4
+            if hasMysticTicket() then
+              if result == nextResult then
+                pendingNavel, pendingBirth = true, false
+                return 4
+              end
+              nextResult = nextResult + 1
+            end
+            if hasAuroraTicket() and result == nextResult then
+              pendingNavel, pendingBirth = false, true
+              return 4
+            end
           end
-          pendingNavel = false
+          pendingNavel, pendingBirth = false, false
           return oldSelected(originId, page, result)
         end
 
         Seagallop.ferryTask = function(ctx, adapters, destId)
           if pendingNavel and destId == 4 then
-            pendingNavel = false
+            pendingNavel, pendingBirth = false, false
             return oldFerryTask(ctx, adapters, 9)
           end
-          pendingNavel = false
+          if pendingBirth and destId == 4 then
+            pendingNavel, pendingBirth = false, false
+            return oldFerryTask(ctx, adapters, 10)
+          end
+          pendingNavel, pendingBirth = false, false
           return oldFerryTask(ctx, adapters, destId)
         end
 
@@ -908,6 +939,54 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
           if navelReturnTask and navelReturnTask() then
             navelReturnTask = nil
             Field.unlock("navel_rock_ferry")
+          end
+        end)
+
+
+        local birthReturnTask
+        local function isBirthHarbor(session)
+          local id = tostring(session and session.map or ""):upper()
+          return id:find("BIRTH_ISLAND_HARBOR", 1, true) ~= nil
+            or id:find("BIRTHISLAND_HARBOR", 1, true) ~= nil
+        end
+
+        birthIslandSailorInteract = function(game, session)
+          if not isBirthHarbor(session) or Field.isLocked() then return false end
+          local dx, dy = 0, 0
+          local face = Player.facing
+          if face == "up" then dy=-1 elseif face == "down" then dy=1
+          elseif face == "left" then dx=-1 elseif face == "right" then dx=1 end
+          if Player.cellX + dx ~= 8 or Player.cellY + dy ~= 6 then return false end
+          local Adapters = require("src.core.game3.scripting.adapters")
+          local Multichoice = require("src.core.game3.scripting.multichoice")
+          local adapters = Adapters.host(mod, game, game and (game.overworld or game.world))
+          local ctx = SpaceSea.vm and SpaceSea.vm.ctx or nil
+          local MENU_ID = 0xF003
+          Field.lock("birth_island_ferry")
+          local function choose(page)
+            local labels, top = oldMenu(10, page)
+            Multichoice.LISTS[MENU_ID] = { labels=labels, count=#labels }
+            adapters.multichoice({op="multichoice",[1]=17,[2]=top,[3]=MENU_ID,[4]=0}, function(sel)
+              local dest = oldSelected(10, page, tonumber(sel) or 127)
+              if dest == 254 then
+                choose(page == 1 and 0 or 1)
+              elseif dest == 127 then
+                Field.unlock("birth_island_ferry")
+              else
+                FlagsSea.setVar(SpaceSea.store, ctx, 0x8004, 10)
+                FlagsSea.setVar(SpaceSea.store, ctx, 0x8006, dest)
+                birthReturnTask = oldFerryTask(ctx, adapters, dest)
+              end
+            end)
+          end
+          Message.show("Where do you want to sail?", function() choose(0) end)
+          return true
+        end
+
+        mod.events:on("world.stepped", function()
+          if birthReturnTask and birthReturnTask() then
+            birthReturnTask = nil
+            Field.unlock("birth_island_ferry")
           end
         end)
       end
@@ -974,6 +1053,58 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
                 Message.show("You should ask the sailor about it.", function()
                   engine.Field.locked = false
                   mysticTicketBusy = false
+                end)
+              end)
+            end)
+          end)
+        end)
+      end)
+      return true
+    end
+
+    local function tryAuroraTicketEvent()
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      local mapId = session and session.map
+      local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
+      if okSpace and Space and Space.mapId then mapId = Space.mapId end
+      if not session or not oneIslandCenter(mapId) or auroraTicketBusy then return false end
+      local state = mysticTicketState(session)
+      if state.auroraTicketGiven or MysteryGift.getFlag(session, FLAG_RECEIVED_AURORA_TICKET) then
+        state.auroraTicketGiven = true
+        return false
+      end
+      if not hasRayquaza(session) then return false end
+
+      auroraTicketBusy = true
+      engine.Field.locked = true
+      Message.show("Oh! Perfect timing!", function()
+        Message.show("Another unusual ticket arrived for you.", function()
+          Message.show("It looks like it's for the SEAGALLOP ferry.", function()
+            if not Bag.add(session.bag, AURORA_TICKET, 1) then
+              Message.show("Your KEY ITEMS POCKET is full.", function()
+                engine.Field.locked = false
+                auroraTicketBusy = false
+              end)
+              return
+            end
+            MysteryGift.setFlag(session, FLAG_ENABLE_SHIP_BIRTH_ISLAND, true)
+            MysteryGift.setFlag(session, FLAG_RECEIVED_AURORA_TICKET, true)
+            local okSpace2, Space2 = pcall(require, "src.core.game3.scripting.space")
+            local okFlags2, Flags2 = pcall(require, "src.core.game3.scripting.flags")
+            if okSpace2 and okFlags2 and Space2 and Flags2 and Space2.store then
+              local ctx2 = Space2.vm and Space2.vm.ctx or nil
+              Flags2.setFlag(Space2.store, ctx2, FLAG_ENABLE_SHIP_BIRTH_ISLAND, true)
+              Flags2.setFlag(Space2.store, ctx2, FLAG_RECEIVED_AURORA_TICKET, true)
+              Flags2.setFlag(Space2.store, ctx2, FLAG_SHOWN_AURORA_TICKET, false)
+              Flags2.setVar(Space2.store, ctx2, VAR_MAP_SCENE_VERMILION_CITY, 3)
+              Flags2.setVar(Space2.store, ctx2, VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 5)
+            end
+            state.auroraTicketGiven = true
+            Message.show("{PLAYER} received the AURORATICKET!", function()
+              Message.show("This one has another strange destination...", function()
+                Message.show("You should ask the sailor about it.", function()
+                  engine.Field.locked = false
+                  auroraTicketBusy = false
                 end)
               end)
             end)
@@ -1173,6 +1304,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       refreshPeriod()
       showTowerDarkrai()
       tryMysticTicketEvent()
+      tryAuroraTicketEvent()
     end)
     mod.events:on("world.stepped", function(ev)
       refreshPeriod()
