@@ -546,7 +546,9 @@ return function(mod)
 
     local function showTowerDarkrai()
       local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-      local mapId = engine.Map and engine.Map.current or (session and session.map)
+      -- Runtime session.map is the canonical Gen 3 map id (for example
+      -- FR_POKEMON_TOWER_7F). Map.current is not a map-id field.
+      local mapId = session and session.map
       local state = session and darkraiState(session)
       local shouldShow = session and state and session.game_cleared == true
         and state.darkraiTowerTriggered ~= true and darkraiTowerTime()
