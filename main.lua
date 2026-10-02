@@ -486,6 +486,66 @@ return function(mod)
       Roamer._allBeastsInstalled = true
     end
 
+    -- Untamed models FRLG roamers as category 0. Keep that public category,
+    -- but pin the exact grouped roamer chosen for its visible OWE so the
+    -- collision/A-press battle resolves to the same persistent individual.
+    if engine.roamerAt and not engine._groupedRoamerOWEInstalled then
+      local visibleRoamer = nil
+
+      engine.roamerAt = function(index)
+        if index ~= 0 then return nil end
+        local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+        local mapId = session and session.map
+        if not session or not mapId then visibleRoamer = nil; return nil end
+
+        if visibleRoamer and visibleRoamer.mapId == mapId then
+          local beast = visibleRoamer.beast
+          if beast and beast.active
+            and (not beast.darkrai or currentPeriod() == "night")
+            and Roamer.normalizeMapId(beast.map) == Roamer.normalizeMapId(mapId) then
+            return visibleRoamer.species, visibleRoamer.level, visibleRoamer.foe
+          end
+          visibleRoamer = nil
+        end
+
+        local enc = Roamer.tryEncounter(session, mapId, "land")
+        if not enc then return nil end
+
+        local chosen
+        local group = session.roamer
+        if type(group) == "table" and type(group.beasts) == "table" then
+          for _, beast in ipairs(group.beasts) do
+            if beast.active and beast.species == enc.species
+              and Roamer.normalizeMapId(beast.map) == Roamer.normalizeMapId(mapId) then
+              chosen = beast
+              break
+            end
+          end
+        end
+
+        visibleRoamer = {
+          mapId = mapId,
+          beast = chosen,
+          species = enc.species,
+          level = enc.level,
+          foe = enc.foe,
+        }
+        return enc.species, enc.level, enc.foe
+      end
+
+      local rawUntamedRoamerMove = engine.roamerMove
+      engine.roamerMove = function(index)
+        visibleRoamer = nil
+        if rawUntamedRoamerMove then return rawUntamedRoamerMove(index) end
+      end
+
+      mod.events:on("map.entered", function()
+        visibleRoamer = nil
+      end)
+
+      engine._groupedRoamerOWEInstalled = true
+    end
+
     local DARKRAI_NAT = 491
     local DARKRAI_SPECIES = DARKRAI_NAT + 64
     local TOWER_7F = "FR_POKEMON_TOWER_7F"
