@@ -554,7 +554,11 @@ return function(mod)
       -- FR_POKEMON_TOWER_7F). Map.current is not a map-id field.
       local mapId = session and session.map
       local state = session and darkraiState(session)
-      local debug = mod.options:get("debug") == true
+      local debug = false
+      if mod.options and type(mod.options.get) == "function" then
+        local ok, value = pcall(function() return mod.options:get("debug") end)
+        debug = ok and value == true
+      end
       local shouldShow = session and state and session.game_cleared == true
         and state.darkraiTowerTriggered ~= true and (debug or darkraiTowerTime())
         and mapId == TOWER_7F and not darkraiSceneBusy
