@@ -67,14 +67,13 @@ return function(mod)
     { id="FR_ROUTE_24", habitat="forest", min=8, max=14, gen=1, base={morning={16,69,63,10},day={16,69,63,10},night={19,43,92,93}} },
     { id="FR_ROUTE_25", habitat="forest", min=8, max=14, gen=1, base={morning={16,69,48,63,17,70},day={16,69,63,17,70},night={163,69,48,63,164,70}} },
     { id="FR_ROUTE_28", habitat="mountain", min=39, max=43, gen=4, base={morning={77,114,232,217,78,84,85},day={77,114,232,217,78,84,85},night={77,114,232,217,215,78}} },
-
-    { id="FR_VIRIDIAN_FOREST", habitat="forest", min=3, max=8, gen=1, base={morning={10,11,12,16},day={13,14,15,16},night={163,164,25,163}} },
-    { id="FR_DIGLETTS_CAVE", habitat="cave", min=13, max=29, gen=2, base={morning={50,51,95,74},day={50,51,95,74},night={51,95,92,228}} },
-    { id="FR_MT_MOON_1F", habitat="cave", min=6, max=12, gen=1, base={morning={41,74,27,35},day={41,74,27,35},night={41,74,35,35}} },
-    { id="FR_MT_MOON_B1F", habitat="cave", min=7, max=14, gen=1, base={morning={41,74,27,35},day={41,74,27,35},night={41,74,92,35}} },
-    { id="FR_MT_MOON_B2F", habitat="cave", min=8, max=16, gen=1, base={morning={41,74,27,35},day={41,74,27,35},night={41,74,92,35}} },
-    { id="FR_ROCK_TUNNEL_1F", habitat="cave", min=10, max=18, gen=2, base={morning={104,74,95,41},day={104,74,95,41},night={104,95,200,93}} },
-    { id="FR_ROCK_TUNNEL_B1F", habitat="cave", min=12, max=20, gen=2, base={morning={104,74,95,41},day={104,74,95,41},night={104,95,200,93}} },
+    { id="FR_VIRIDIAN_FOREST", habitat="forest", min=3, max=8, gen=4, base={morning={10,11,12,13,14,15,16,17,25,325,322,406,455},day={10,11,13,14,16,17,25,325,322,406,455},night={163,164,25,325,322,406,455}} },
+    { id="FR_DIGLETTS_CAVE", habitat="cave", min=13, max=29, gen=4, base={morning={50,51,359,296,436,433},day={50,51,359,296,436,433},night={50,51,359,296,436,433}} },
+    { id="FR_MT_MOON_1F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,28,35,359,296,436,433},day={41,74,27,46,28,35,359,296,436,433},night={41,74,27,46,28,35,359,296,436,433}} },
+    { id="FR_MT_MOON_B1F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,28,35,359,296,436,433},day={41,74,27,46,28,35,359,296,436,433},night={41,74,27,46,28,35,359,296,436,433}} },
+    { id="FR_MT_MOON_B2F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,28,35,359,296,436,433},day={41,74,27,46,28,35,359,296,436,433},night={41,74,27,46,28,35,359,296,436,433}} },
+    { id="FR_ROCK_TUNNEL_1F", habitat="cave", min=8, max=14, gen=4, base={morning={104,74,66,41,67,359,296,436,433},day={104,74,66,41,67,359,296,436,433},night={104,74,66,41,67,359,296,436,433}} },
+    { id="FR_ROCK_TUNNEL_B1F", habitat="cave", min=10, max=16, gen=4, base={morning={74,104,95,41,105,115,359,296,436,433},day={74,104,95,41,105,115,359,296,436,433},night={74,104,95,41,105,115,359,296,436,433}} },
     { id="FR_POWER_PLANT", habitat="electric", min=20, max=35, gen=4, base={morning={81,100,25,125},day={81,100,25,125},night={81,100,125,479}} },
     { id="FR_POKEMON_TOWER_1F", habitat="ghost", min=20, max=28, gen=2, base={morning={41,92,93,200},day={41,92,93,200},night={92,93,200,355}} },
     { id="FR_POKEMON_TOWER_2F", habitat="ghost", min=21, max=29, gen=2, base={morning={92,93,200,355},day={92,93,200,355},night={92,93,200,355}} },
@@ -83,21 +82,21 @@ return function(mod)
     { id="FR_POKEMON_TOWER_5F", habitat="ghost", min=24, max=32, gen=2, base={morning={92,93,200,355},day={92,93,200,355},night={92,93,200,355}} },
     { id="FR_POKEMON_TOWER_6F", habitat="ghost", min=25, max=33, gen=4, base={morning={92,93,200,355},day={92,93,200,355},night={92,93,200,355}} },
     { id="FR_POKEMON_TOWER_7F", habitat="ghost", min=26, max=34, gen=4, base={morning={92,93,200,355},day={92,93,200,355},night={92,93,200,355}} },
-    { id="FR_SEAFOAM_ISLANDS_1F", habitat="ice", min=26, max=35, gen=2, base={morning={54,79,87,120},day={54,79,87,120},night={80,87,120,131}} },
-    { id="FR_SEAFOAM_ISLANDS_B1F", habitat="ice", min=28, max=37, gen=2, base={morning={54,79,87,120},day={54,79,87,120},night={80,87,120,131}} },
-    { id="FR_SEAFOAM_ISLANDS_B2F", habitat="ice", min=30, max=39, gen=2, base={morning={54,79,87,120},day={54,79,87,120},night={80,87,120,131}} },
-    { id="FR_SEAFOAM_ISLANDS_B3F", habitat="ice", min=32, max=40, gen=2, base={morning={54,79,87,120},day={54,79,87,120},night={80,87,120,131}} },
-    { id="FR_SEAFOAM_ISLANDS_B4F", habitat="ice", min=34, max=42, gen=4, base={morning={54,79,87,120},day={54,79,87,120},night={80,87,120,131}} },
+    { id="FR_SEAFOAM_ISLANDS_1F", habitat="ice", min=26, max=32, gen=4, base={morning={41,42,54,55,359,296,436,433},day={41,42,54,55,359,296,436,433},night={41,42,54,55,359,296,436,433}} },
+    { id="FR_SEAFOAM_ISLANDS_B1F", habitat="ice", min=28, max=34, gen=4, base={morning={41,42,54,55,86,87,359,296,436,433},day={41,42,54,55,86,87,359,296,436,433},night={41,42,54,55,86,87,359,296,436,433}} },
+    { id="FR_SEAFOAM_ISLANDS_B2F", habitat="ice", min=30, max=36, gen=4, base={morning={42,54,55,86,87,359,296,436,433},day={42,54,55,86,87,359,296,436,433},night={42,54,55,86,87,359,296,436,433}} },
+    { id="FR_SEAFOAM_ISLANDS_B3F", habitat="ice", min=32, max=38, gen=4, base={morning={42,54,55,86,87,359,296,436,433},day={42,54,55,86,87,359,296,436,433},night={42,54,55,86,87,359,296,436,433}} },
+    { id="FR_SEAFOAM_ISLANDS_B4F", habitat="ice", min=34, max=40, gen=4, base={morning={42,55,86,87,359,296,436,433},day={42,55,86,87,359,296,436,433},night={42,55,86,87,359,296,436,433}} },
     { id="FR_POKEMON_MANSION_1F", habitat="fire", min=30, max=40, gen=2, base={morning={58,77,88,109},day={58,77,88,109},night={109,88,200,228}} },
     { id="FR_POKEMON_MANSION_B1F", habitat="fire", min=32, max=42, gen=2, base={morning={58,77,88,109},day={58,77,88,109},night={109,88,200,228}} },
     { id="FR_POKEMON_MANSION_B2F", habitat="fire", min=34, max=44, gen=2, base={morning={58,77,88,109},day={58,77,88,109},night={109,88,200,228}} },
     { id="FR_POKEMON_MANSION_B3F", habitat="fire", min=36, max=46, gen=2, base={morning={58,77,88,109},day={58,77,88,109},night={109,88,200,228}} },
-    { id="FR_CERULEAN_CAVE_1F", habitat="rare", min=38, max=50, gen=4, base={morning={66,49,82,132},day={66,49,82,132},night={94,125,442,479}} },
-    { id="FR_CERULEAN_CAVE_B1F", habitat="rare", min=42, max=55, gen=4, base={morning={68,49,82,132},day={68,49,82,132},night={94,125,442,479}} },
-    { id="FR_CERULEAN_CAVE_B2F", habitat="rare", min=45, max=60, gen=4, base={morning={68,49,82,132},day={68,49,82,132},night={94,125,442,479}} },
-    { id="FR_VICTORY_ROAD_1F", habitat="mountain", min=38, max=48, gen=4, base={morning={95,111,74,105},day={95,111,74,105},night={95,94,215,442}} },
-    { id="FR_VICTORY_ROAD_2F", habitat="mountain", min=40, max=50, gen=4, base={morning={95,111,74,105},day={95,111,74,105},night={95,94,215,442}} },
-    { id="FR_VICTORY_ROAD_3F", habitat="mountain", min=42, max=52, gen=4, base={morning={95,111,74,105},day={95,111,74,105},night={95,94,215,442}} },
+    { id="FR_CERULEAN_CAVE_1F", habitat="rare", min=38, max=46, gen=4, base={morning={67,47,57,82,132,42,101,202,359,296,436,433},day={67,47,57,82,132,42,101,202,359,296,436,433},night={67,47,57,82,132,42,101,202,359,296,436,433}} },
+    { id="FR_CERULEAN_CAVE_B1F", habitat="rare", min=42, max=49, gen=4, base={morning={47,64,82,42,67,132,101,202,359,296,436,433},day={47,64,82,42,67,132,101,202,359,296,436,433},night={47,64,82,42,67,132,101,202,359,296,436,433}} },
+    { id="FR_CERULEAN_CAVE_B2F", habitat="rare", min=40, max=46, gen=4, base={morning={47,64,67,42,82,132,101,202,359,296,436,433},day={47,64,67,42,82,132,101,202,359,296,436,433},night={47,64,67,42,82,132,101,202,359,296,436,433}} },
+    { id="FR_VICTORY_ROAD_1F", habitat="mountain", min=32, max=36, gen=4, base={morning={42,75,232,217,95,111,359,296,436,433},day={42,75,232,217,95,111,359,296,436,433},night={42,75,232,217,95,111,359,296,436,433}} },
+    { id="FR_VICTORY_ROAD_2F", habitat="mountain", min=34, max=38, gen=4, base={morning={42,75,232,217,95,111,359,296,436,433},day={42,75,232,217,95,111,359,296,436,433},night={42,75,232,217,95,111,359,296,436,433}} },
+    { id="FR_VICTORY_ROAD_3F", habitat="mountain", min=36, max=40, gen=4, base={morning={42,75,232,217,95,111,359,296,436,433},day={42,75,232,217,95,111,359,296,436,433},night={42,75,232,217,95,111,359,296,436,433}} },
     { id="FR_SAFARI_ZONE_CENTER", habitat="safari", min=22, max=35, gen=4, base={morning={115,111,128,29},day={115,111,128,29},night={115,128,215,198}} },
     { id="FR_SAFARI_ZONE_EAST", habitat="safari", min=22, max=35, gen=4, base={morning={115,111,128,56},day={115,111,128,56},night={115,128,215,198}} },
     { id="FR_SAFARI_ZONE_NORTH", habitat="safari", min=22, max=35, gen=4, base={morning={115,111,128,35},day={115,111,128,35},night={115,128,215,198}} },
@@ -164,11 +163,18 @@ return function(mod)
   end
 
   -- Legendary and Mythical Pokémon are handled separately in FireRed.
+  local LEGENDARY_OR_MYTHICAL = {
+    [144]=true,[145]=true,[146]=true,[150]=true,[151]=true,
+    [243]=true,[244]=true,[245]=true,[249]=true,[250]=true,[251]=true,
+    [377]=true,[378]=true,[379]=true,[380]=true,[381]=true,
+    [382]=true,[383]=true,[384]=true,[385]=true,[386]=true,
+    [480]=true,[481]=true,[482]=true,[483]=true,[484]=true,[485]=true,
+    [486]=true,[487]=true,[488]=true,[489]=true,[490]=true,[491]=true,
+    [492]=true,[493]=true,
+  }
+
   local function isLegendaryOrMythical(nat)
-    return (nat >= 144 and nat <= 151)
-      or (nat >= 243 and nat <= 251)
-      or (nat >= 377 and nat <= 386)
-      or (nat >= 480 and nat <= 493)
+    return LEGENDARY_OR_MYTHICAL[nat] == true
   end
 
   local cache = {}
