@@ -824,6 +824,8 @@ local FLAG_GOT_RUBY = 0x2DD
         Seagallop._mysticTicketCompat = true
         local oldMenu = Seagallop.destinationMenu
         local oldSelected = Seagallop.selectedDestination
+        local oldFerryTask = Seagallop.ferryTask
+        local pendingNavel = false
 
         local function hasMysticTicket()
           local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
@@ -843,9 +845,22 @@ local FLAG_GOT_RUBY = 0x2DD
 
         Seagallop.selectedDestination = function(originId, page, result)
           if hasMysticTicket() and page == 1 and result == 4 then
-            return 9
+            pendingNavel = true
+            -- Return a destination the stock Sevii switch knows how to handle.
+            -- ferryTask redirects only this voyage to Navel Rock.
+            return 4
           end
+          pendingNavel = false
           return oldSelected(originId, page, result)
+        end
+
+        Seagallop.ferryTask = function(ctx, adapters, destId)
+          if pendingNavel and destId == 4 then
+            pendingNavel = false
+            return oldFerryTask(ctx, adapters, 9)
+          end
+          pendingNavel = false
+          return oldFerryTask(ctx, adapters, destId)
         end
       end
     end
