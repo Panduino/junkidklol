@@ -877,6 +877,13 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
               pendingNavel, pendingBirth = false, true
               return 4
             end
+            if hasAuroraTicket() then nextResult = nextResult + 1 end
+            -- Extra ticket destinations are inserted immediately before EXIT.
+            -- Translate the shifted EXIT index back to the stock page-2 EXIT slot.
+            if result == nextResult then
+              pendingNavel, pendingBirth = false, false
+              return 127
+            end
           end
           pendingNavel, pendingBirth = false, false
           return oldSelected(originId, page, result)
