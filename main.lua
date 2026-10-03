@@ -922,10 +922,19 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
           Field.lock("special_island_ferry")
 
           local function sail(dest)
+            local labels = {
+              [0] = "EventScript_SailToVermilionCity",
+              [1] = "EventScript_SailToOneIsland",
+              [2] = "EventScript_SailToTwoIsland",
+              [3] = "EventScript_SailToThreeIsland",
+              [4] = "EventScript_SailToFourIsland",
+              [5] = "EventScript_SailToFiveIsland",
+              [6] = "EventScript_SailToSixIsland",
+              [7] = "EventScript_SailToSevenIsland",
+            }
             FlagsSea.setVar(SpaceSea.store, ctx, 0x8004, origin)
-            FlagsSea.setVar(SpaceSea.store, ctx, 0x8006, dest)
             Field.unlock("special_island_ferry")
-            local key = SpaceSea.scriptKey("EventScript_SailToDest")
+            local key = SpaceSea.scriptKey(labels[dest])
             if not key or not SpaceSea.startScript(key) then
               Field.unlock()
             end
