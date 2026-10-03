@@ -396,17 +396,15 @@ return function(mod)
             ox = iw * 0.5
             oy = ih * 0.5
           else
-            -- Fronts looked correct when rendered through FireRed's native
-            -- 32,32 picture origin. Keep the current centered screen position
-            -- by compensating for the origin change instead of changing the
-            -- sprite's rendering behavior.
+            -- Preserve the exact pre-reanchor front render path: do not
+            -- replace FireRed's supplied origin or sampling behavior. Shift
+            -- only the draw coordinates so the old rendering lands on the
+            -- new centered enemy anchor.
             local iw, ih = drawable:getDimensions()
-            local dsx = sx or 1
-            local dsy = sy or dsx
-            x = (x or 0) + (32 - iw * 0.5) * dsx
-            y = (y or 0) + (32 - ih * 0.5) * dsy
-            ox = 32
-            oy = 32
+            local nativeOx = tonumber(ox) or 32
+            local nativeOy = tonumber(oy) or 32
+            x = (x or 0) + (nativeOx - iw * 0.5) * (sx or 1)
+            y = (y or 0) + (nativeOy - ih * 0.5) * (sy or sx or 1)
           end
         end
         return realDraw(drawable, x, y, r, sx, sy, ox, oy, ...)
