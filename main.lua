@@ -397,6 +397,69 @@ return function(mod)
       return false
     end
 
+    -- Pattern Bush has a rare visible Shaymin encounter.  This is injected
+    -- only while Untamed is generating OWEs, so normal grass battles keep
+    -- their regular encounter table.
+    do
+      local Owe = engine.Owe
+      if Owe and type(Owe.tick) == "function" and not Owe._rareMythicalCompat then
+        local Dex = require("src.core.game3.dex")
+        local SHAYMIN_NAT = 492
+        local SHAYMIN_SPECIES = SHAYMIN_NAT + 64
+        local rawTick = Owe.tick
+        local rawWildArea = engine.wildArea
+        local inOweTick = false
+
+        local function patternBush()
+          local id = tostring(engine.mapId and engine.mapId() or ""):upper()
+          return id:find("PATTERN_BUSH", 1, true) ~= nil
+            or id:find("PATTERNBUSH", 1, true) ~= nil
+        end
+
+        local function shayminCaught()
+          local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+          return session and session.dex and Dex.isCaught(session.dex, SHAYMIN_SPECIES) == true
+        end
+
+        local function shayminActive()
+          for _, actor in ipairs(engine.actors or {}) do
+            if actor and actor.active and actor.oweType
+                and (tonumber(actor.engineSpecies) == SHAYMIN_SPECIES
+                  or tonumber(actor.species) == SHAYMIN_NAT) then
+              return true
+            end
+          end
+          return false
+        end
+
+        engine.wildArea = function(header, kind)
+          local slots = rawWildArea(header, kind)
+          if not inOweTick or kind ~= "land" or not patternBush()
+              or shayminCaught() or shayminActive()
+              or type(slots) ~= "table" or #slots == 0 then
+            return slots
+          end
+
+          local rare = {}
+          for i = 1, 12 do
+            local source = slots[i] or slots[#slots]
+            rare[i] = source
+          end
+          rare[12] = { species = SHAYMIN_SPECIES, minLevel = 50, maxLevel = 50 }
+          return rare
+        end
+
+        Owe.tick = function(...)
+          inOweTick = true
+          local ok, err = pcall(rawTick, ...)
+          inOweTick = false
+          if not ok then error(err, 0) end
+        end
+
+        Owe._rareMythicalCompat = true
+      end
+    end
+
     -- FRLG normally keeps only one roaming beast in session.roamer. Keep all
     -- three in that same saved field so each has independent route, HP/status,
     -- personality/IVs, and caught state while preserving the native mechanics.
