@@ -294,19 +294,23 @@ return function(mod)
 
   -- Fullscreen FireRed terrain replacement. Custom art is authored at
   -- 240x135 (16:9); nearest filtering keeps every source pixel crisp.
-  -- The custom image already contains both battle platforms, so the native
-  -- platform layers must not be composited over it.
-  local customGrass
-  local function loadCustomGrass()
-    if customGrass ~= nil then return customGrass or nil end
-    customGrass = false
+  -- Each filename matches BattleBg.sheetKey(). Missing files fall back to
+  -- FireRed's native terrain/platform renderer.
+  local customBackgrounds = {}
+  local function loadCustomBackground(key)
+    if not key or key == "" then return nil end
+    if customBackgrounds[key] ~= nil then
+      return customBackgrounds[key] or nil
+    end
+    customBackgrounds[key] = false
     if not (love and love.graphics and mod.assets and mod.assets.path) then return nil end
-    local okPath, path = pcall(mod.assets.path, mod.assets, "assets/backgrounds/grass.png")
+    local okPath, path = pcall(mod.assets.path, mod.assets,
+      "assets/backgrounds/" .. tostring(key) .. ".png")
     if not okPath or not path then return nil end
     local okImg, img = pcall(love.graphics.newImage, path)
     if not okImg or not img then return nil end
     if img.setFilter then img:setFilter("nearest", "nearest") end
-    customGrass = img
+    customBackgrounds[key] = img
     return img
   end
 
@@ -316,15 +320,12 @@ return function(mod)
     local originalBgDraw = BattleBg.draw
     BattleBg.draw = function(id, enemyOx, playerOx, bgOx)
       local key = BattleBg.sheetKey(id)
-      if key ~= "grass" then
+      local img = loadCustomBackground(key)
+      if not img then
         return originalBgDraw(id, enemyOx, playerOx, bgOx)
       end
-      local img = loadCustomGrass()
-      if not img then return originalBgDraw(id, enemyOx, playerOx, bgOx) end
 
-      -- Leave the native terrain/platform layer transparent. The authored
-      -- 240x135 background is composited at window size after Kanto Gear has
-      -- applied its Gen3 UI-visibility wrappers.
+      -- Custom 240x135 art already contains both battle platforms.
       love.graphics.clear(0, 0, 0, 0)
       love.graphics.setColor(1, 1, 1, 1)
       return true
@@ -338,9 +339,9 @@ return function(mod)
     mod.hooks:wrap("render.compose", function(next, renderer, ctx)
       local okBattle, Battle = pcall(require, "src.core.game3.battle")
       local active = okBattle and Battle and Battle.isActive and Battle.isActive()
-      local grass = active and okBg and BattleBg and BattleBg.sheetKey
-        and BattleBg.sheetKey() == "grass"
-      local img = grass and loadCustomGrass() or nil
+      local key = active and okBg and BattleBg and BattleBg.sheetKey
+        and BattleBg.sheetKey() or nil
+      local img = key and loadCustomBackground(key) or nil
       if not (img and ctx and ctx.uiCanvas) then
         return next(renderer, ctx)
       end
@@ -350,7 +351,8 @@ return function(mod)
       local iw, ih = img:getDimensions()
       local cw, ch = ctx.uiCanvas:getDimensions()
       local sceneH = math.min(135, ch)
-      local quad = love.graphics.newQuad(0, 0, math.min(240, cw), sceneH, cw, ch)
+      local sceneW = math.min(240, cw)
+      local quad = love.graphics.newQuad(0, 0, sceneW, sceneH, cw, ch)
 
       love.graphics.push("all")
       love.graphics.origin()
@@ -362,7 +364,7 @@ return function(mod)
       ctx.uiCanvas:setFilter("nearest", "nearest")
       love.graphics.draw(img, 0, 0, 0, ww / iw, wh / ih)
       love.graphics.draw(ctx.uiCanvas, quad, 0, 0, 0,
-        ww / math.min(240, cw), wh / sceneH)
+        ww / sceneW, wh / sceneH)
       love.graphics.pop()
       quad:release()
       return true
