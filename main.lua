@@ -407,17 +407,15 @@ return function(mod)
           x = (x or 0) + (meta.ox or 0)
           y = (y or 0) + (meta.oy or 0)
           if meta.g9Back then
-            -- Use the same lossless draw path as the working fronts: keep the
-            -- native cached pixels and FireRed's supplied scale unchanged,
-            -- then translate its stock 32,32 origin to the trimmed image's
-            -- actual centre. No G9-specific resize occurs here.
+            -- Keep the native-resolution cached frame and the proven back
+            -- centre anchor. Present it at an integer 2x scale so every G9
+            -- source pixel remains a clean 2x2 block instead of being
+            -- fractionally resampled.
             local iw, ih = drawable:getDimensions()
             local baseSx = sx or 1
             local baseSy = sy or baseSx
-            local nativeOx = tonumber(ox) or 32
-            local nativeOy = tonumber(oy) or 32
-            x = (x or 0) + (iw * 0.5 - nativeOx) * baseSx
-            y = (y or 0) + (ih * 0.5 - nativeOy) * baseSy
+            sx = baseSx * 2
+            sy = baseSy * 2
             ox = iw * 0.5
             oy = ih * 0.5
           else
