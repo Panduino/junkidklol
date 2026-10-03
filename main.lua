@@ -527,7 +527,7 @@ return function(mod)
       end
     end
 
-    -- Pattern Bush and Berry Forest have rare visible Mythical encounters. These are injected
+    -- Pattern Bush, Berry Forest, and Mt. Ember B5F have unique visible encounters. These are injected
     -- only while Untamed is generating OWEs, so normal grass battles keep
     -- their regular encounter table.
     do
@@ -538,6 +538,8 @@ return function(mod)
         local SHAYMIN_SPECIES = Pokemon.speciesFromNational(SHAYMIN_NAT)
         local CELEBI_NAT = 251
         local CELEBI_SPECIES = Pokemon.speciesFromNational(CELEBI_NAT) or CELEBI_NAT
+        local HEATRAN_NAT = 485
+        local HEATRAN_SPECIES = Pokemon.speciesFromNational(HEATRAN_NAT)
         local rawTick = Owe.tick
         local rawWildArea = engine.wildArea
         local inOweTick = false
@@ -546,13 +548,17 @@ return function(mod)
           local id = tostring(engine.mapId and engine.mapId() or ""):upper()
           if id:find("PATTERN_BUSH", 1, true) ~= nil
               or id:find("PATTERNBUSH", 1, true) ~= nil then
-            return SHAYMIN_NAT, SHAYMIN_SPECIES
+            return SHAYMIN_NAT, SHAYMIN_SPECIES, 50
           end
           if id:find("BERRY_FOREST", 1, true) ~= nil
               or id:find("BERRYFOREST", 1, true) ~= nil then
-            return CELEBI_NAT, CELEBI_SPECIES
+            return CELEBI_NAT, CELEBI_SPECIES, 50
           end
-          return nil, nil
+          if id == "FR_MT_EMBER_RUBY_PATH_B5F"
+              or id:find("MT_EMBER_RUBY_PATH_B5F", 1, true) ~= nil then
+            return HEATRAN_NAT, HEATRAN_SPECIES, 70
+          end
+          return nil, nil, nil
         end
 
         local function mythicalCaught(species)
@@ -573,7 +579,7 @@ return function(mod)
 
         engine.wildArea = function(header, kind)
           local slots = rawWildArea(header, kind)
-          local nat, species = currentRareMythical()
+          local nat, species, level = currentRareMythical()
           if not inOweTick or kind ~= "land" or not species
               or mythicalCaught(species) or mythicalActive(nat, species)
               or type(slots) ~= "table" or #slots == 0 then
@@ -585,7 +591,7 @@ return function(mod)
             local source = slots[i] or slots[#slots]
             rare[i] = source
           end
-          rare[12] = { species = species, minLevel = 50, maxLevel = 50 }
+          rare[12] = { species = species, minLevel = level or 50, maxLevel = level or 50 }
           return rare
         end
 
@@ -780,7 +786,7 @@ return function(mod)
       local rawObjectsUpdate = Objects.update
       Objects.update = function(game, ...)
         local result = rawObjectsUpdate(game, ...)
-        for _, lid in ipairs({124, 126, 127, 128, 129, 130, 131}) do
+        for _, lid in ipairs({126, 127, 128, 129, 130, 131}) do
           local actor = Objects._byId and Objects._byId[lid]
           if actor and actor._uadvIdleSheet and actor._uadvIdleRow then
             actor._uadvIdleTick = ((actor._uadvIdleTick or 0) + 1) % 32
@@ -2075,101 +2081,6 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       return true
     end
 
-    -- Heatran: intentionally implemented as a standalone Cresselia-style
-    -- stationary actor. It has no RTC or Ruby prerequisite.
-    local HEATRAN_SPECIES = Pokemon.speciesFromNational(485)
-    local HEATRAN_MAP = "FR_MT_EMBER_RUBY_PATH_B5F"
-    local HEATRAN_NPC_ID = 124
-    local heatranActor = nil
-    local heatranBusy = false
-
-    local function heatranCaught(session)
-      return session and session.dex and Dex.isCaught(session.dex, HEATRAN_SPECIES) == true
-    end
-
-    local function clearHeatranActor()
-      if Objects._byId and Objects._byId[HEATRAN_NPC_ID] then
-        Objects._byId[HEATRAN_NPC_ID] = nil
-        for i = #(Objects._order or {}), 1, -1 do
-          if Objects._order[i] == HEATRAN_NPC_ID then table.remove(Objects._order, i) end
-        end
-      end
-      heatranActor = nil
-    end
-
-    local function showHeatran()
-      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-      local shouldShow = session and session.map == HEATRAN_MAP
-        and not heatranCaught(session) and not heatranBusy
-      if not shouldShow then clearHeatranActor(); return end
-      if heatranActor and Objects._byId and Objects._byId[HEATRAN_NPC_ID] == heatranActor then return end
-      clearHeatranActor()
-      if not Objects._byId or not Objects._order then return end
-
-      local personality = engine.random32 and engine.random32() or 0
-      local atlasSpecies = engine.expansionSpecies(HEATRAN_SPECIES, personality)
-      if not atlasSpecies then return end
-      local female = engine.femaleFor and engine.femaleFor(HEATRAN_SPECIES, personality) or false
-      local sheet, row = engine.Gfx.sheetFor(atlasSpecies, female, false)
-      if not sheet then return end
-      local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
-
-      local x, y = 7, 5
-      local elevation = engine.elevationAt and engine.elevationAt(x, y) or 3
-      local actor = {
-        active=true, localId=HEATRAN_NPC_ID, originLocalId=HEATRAN_NPC_ID,
-        originMapId=session.map, cellX=x, cellY=y, px=x*16, py=y*16,
-        homeX=x, homeY=y, targetX=x, targetY=y,
-        facing="down", sprite=graphicsId, graphicsId=graphicsId,
-        elevation=elevation, currentElevation=elevation,
-        movementType=0x09, movement="STAY", range="DOWN",
-        radius={x=0,y=0}, rangeX=0, rangeY=0,
-        visible=true, hidden=false, invisible=false, frozen=true,
-        passable=false, moving=false, progress=0, stepFrames=16,
-        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=8,
-        def={ localId=HEATRAN_NPC_ID, x=x, y=y, graphicsId=graphicsId,
-          movementType=0x09, facing="down" },
-      }
-      Objects._byId[HEATRAN_NPC_ID] = actor
-      Objects._order[#Objects._order + 1] = HEATRAN_NPC_ID
-      heatranActor = actor
-    end
-
-    local function triggerHeatranScene()
-      if not heatranActor or not heatranActor.active or heatranBusy then return false end
-      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-      if not session or session.map ~= HEATRAN_MAP then return false end
-      local P = engine.Player
-      local distance = math.abs(P.cellX - heatranActor.cellX) + math.abs(P.cellY - heatranActor.cellY)
-      if distance ~= 1 then return false end
-
-      local Fade = require("src.ui.game3.fade")
-      heatranBusy = true
-      engine.Field.locked = true
-      if P.cellX < heatranActor.cellX then P.facing = "right"
-      elseif P.cellX > heatranActor.cellX then P.facing = "left"
-      elseif P.cellY < heatranActor.cellY then P.facing = "down"
-      else P.facing = "up" end
-
-      local toWhite = Fade.MODE and (Fade.MODE.TO_WHITE or Fade.MODE.WHITE)
-      local fromWhite = Fade.MODE and (Fade.MODE.FROM_WHITE or Fade.MODE.WHITE_IN)
-      local function battle()
-        clearHeatranActor()
-        mod.world:startWildBattle(HEATRAN_SPECIES, 70, function()
-          engine.Field.locked = false
-          heatranBusy = false
-          if not heatranCaught(session) then clearHeatranActor() end
-        end)
-      end
-      if toWhite and fromWhite then
-        Fade.begin(toWhite, 1, function()
-          Fade.begin(fromWhite, 1, battle)
-        end)
-      else
-        battle()
-      end
-      return true
-    end
     -- Manaphy / Phione: after becoming Champion, the Route 5 Day Care man
     -- gives one genuine Manaphy Egg. Manaphy + Ditto then produces Phione
     -- through the normal two-parent Day Care breeding system.
@@ -2337,7 +2248,6 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       showRegisteel()
       showRegirock()
       showRegigigas()
-      showHeatran()
       tryTicketEvents()
       refreshPeriod()
       -- refreshPeriod may invalidate/rebind the live map on a period change.
@@ -2348,7 +2258,6 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       showRegisteel()
       showRegirock()
       showRegigigas()
-      showHeatran()
     end)
     -- Sevii/native map imports can perform a same-map rebind after map.entered.
     -- Objects.loadMap() rebuilds _byId/_order during that rebind, which erases
@@ -2370,12 +2279,10 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       showRegisteel()
       showRegirock()
       showRegigigas()
-      showHeatran()
       triggerRegice()
       triggerRegisteel()
       triggerRegirock()
       triggerRegigigas()
-      triggerHeatranScene()
       tryTicketEvents()
     end)
 
