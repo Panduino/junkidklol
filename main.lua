@@ -241,6 +241,7 @@ return function(mod)
     -- lowered individually instead of moving every enemy by the same amount.
     imageMeta[img] = {
       drawScale = back and (frames._g9DrawScale or 1) or 1,
+      g9Back = back,
       -- Keep the scene correction, but also respect G9's authored back
       -- placement instead of centering every species identically.
       ox = back
@@ -393,12 +394,19 @@ return function(mod)
         if meta then
           x = (x or 0) + (meta.ox or 0)
           y = (y or 0) + (meta.oy or 0)
-          if meta.drawScale and meta.drawScale ~= 1 then
-            sx = (sx or 1) * meta.drawScale
-            sy = (sy or sx or 1) * meta.drawScale
+          local baseSx = sx or 1
+          local baseSy = sy or baseSx
+          local ds = meta.drawScale or 1
+          sx = baseSx * ds
+          sy = baseSy * ds
+          -- G9 frames are union-trimmed canvases, not FireRed's fixed 64x64
+          -- pictures. Center each trimmed image on the battler anchor instead
+          -- of retaining the native hard-coded 32,32 origin.
+          if meta.g9Back then
+            local iw, ih = drawable:getDimensions()
+            ox = iw * 0.5
+            oy = ih * 0.5
           end
-          -- Keep Gen 3's native 32,32 sampling/origin. Back sprites now stay
-          -- native-resolution in the cache and are enlarged only at draw time.
         end
         return realDraw(drawable, x, y, r, sx, sy, ox, oy, ...)
       end
