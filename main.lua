@@ -1850,7 +1850,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       local sheet, row = engine.Gfx.sheetFor(atlasSpecies, female, false)
       if not sheet then return end
       local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
-      local x, y = 7, 7
+      local x, y = 7, 5
       local elevation = engine.elevationAt and engine.elevationAt(x, y) or 0
       local actor = {
         active=true, localId=HEATRAN_NPC_ID, originLocalId=HEATRAN_NPC_ID,
