@@ -261,8 +261,11 @@ return function(mod)
           -- Do not invent a percentage-height lift for flying species:
           -- dbk_metrics already describes their intended battle placement.
           local fy = (metric and tonumber(metric.fy)) or 0
-          local base = 32 - (h / 2) + 14
-          return math.floor(base + fy * 0.5 + 0.5)
+          -- Bidoof (fy=6) is the verified visual reference for this scene.
+          -- G9's lower fy values represent fronts that belong progressively
+          -- higher relative to that contact point.
+          local base = 32 - (h / 2) + 17
+          return math.floor(base - (6 - fy) * 2 + 0.5)
         end)(),
     }
     return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
