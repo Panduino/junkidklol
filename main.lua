@@ -546,6 +546,7 @@ return function(mod)
         local rawWildHeader = engine.wildHeader
         local rawWildArea = engine.wildArea
         local rawTerrainAt = engine.Encounters.terrainAt
+        local rawElevationAt = engine.elevationAt
         local inOweTick = false
         local heatranHeader = { land = { rate = 1, slots = {} } }
         for i = 1, 12 do
@@ -636,6 +637,20 @@ return function(mod)
             return "land"
           end
           return terrain
+        end
+
+        -- Ruby Path B5F's usable floor is elevation 0, but Untamed rejects
+        -- elevation 0/15 before it will create an OWE. Give only Untamed's
+        -- B5F spawn pass a normal floor elevation; the real map elevation is
+        -- untouched everywhere else.
+        engine.elevationAt = function(x, y, ...)
+          local elevation = rawElevationAt(x, y, ...)
+          if inOweTick and inHeatranRoom() and not caught(HEATRAN_SPECIES)
+              and not active(HEATRAN_NAT, HEATRAN_SPECIES)
+              and elevation == 0 then
+            return 3
+          end
+          return elevation
         end
 
         Owe.tick = function(...)
