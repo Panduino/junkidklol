@@ -780,7 +780,7 @@ return function(mod)
       local rawObjectsUpdate = Objects.update
       Objects.update = function(game, ...)
         local result = rawObjectsUpdate(game, ...)
-        for _, lid in ipairs({126, 127, 128, 129, 130, 131, 132}) do
+        for _, lid in ipairs({124, 126, 127, 128, 129, 130, 131}) do
           local actor = Objects._byId and Objects._byId[lid]
           if actor and actor._uadvIdleSheet and actor._uadvIdleRow then
             actor._uadvIdleTick = ((actor._uadvIdleTick or 0) + 1) % 32
@@ -2079,7 +2079,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
     -- stationary actor. It has no RTC or Ruby prerequisite.
     local HEATRAN_SPECIES = Pokemon.speciesFromNational(485)
     local HEATRAN_MAP = "FR_MT_EMBER_RUBY_PATH_B5F"
-    local HEATRAN_NPC_ID = 132
+    local HEATRAN_NPC_ID = 124
     local heatranActor = nil
     local heatranBusy = false
 
