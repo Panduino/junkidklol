@@ -290,7 +290,7 @@ return function(mod)
     if customGrass ~= nil then return customGrass or nil end
     customGrass = false
     if not (love and love.graphics and mod.assets and mod.assets.path) then return nil end
-    local okPath, path = pcall(mod.assets.path, mod.assets, "backgrounds/grass.png")
+    local okPath, path = pcall(mod.assets.path, mod.assets, "assets/backgrounds/grass.png")
     if not okPath or not path then return nil end
     local okImg, img = pcall(love.graphics.newImage, path)
     if not okImg or not img then return nil end
