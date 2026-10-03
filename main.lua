@@ -311,12 +311,51 @@ return function(mod)
       local img = loadCustomGrass()
       if not img then return originalBgDraw(id, enemyOx, playerOx, bgOx) end
 
+      -- The authored background is presented later by render.compose. At this
+      -- point we are drawing into Gen3's 240x160 battle/UI canvas, so erase
+      -- the engine's opaque battle clear and leave a transparent scene layer.
+      love.graphics.clear(0, 0, 0, 0)
       love.graphics.setColor(1, 1, 1, 1)
-      love.graphics.draw(img, 0, 0)
 
       -- Platforms are baked into backgrounds/grass.png.
       return true
     end
+  end
+
+  -- Gen3 owns a fixed 240x160 UI canvas. Do not stretch the 240x135
+  -- background into that canvas: own the final window composition instead.
+  if mod.hooks and mod.hooks.wrap then
+    mod.hooks:wrap("render.compose", function(next, renderer, ctx)
+      local okBattle, Battle = pcall(require, "src.core.game3.battle")
+      local active = okBattle and Battle and Battle.isActive and Battle.isActive()
+      local img = active and loadCustomGrass() or nil
+      local grass = okBg and BattleBg and BattleBg.sheetKey and BattleBg.sheetKey() == "grass"
+      if not (active and grass and img and ctx and ctx.uiCanvas) then
+        return next(renderer, ctx)
+      end
+
+      local ww = tonumber(ctx.ww) or love.graphics.getWidth()
+      local wh = tonumber(ctx.wh) or love.graphics.getHeight()
+      local iw, ih = img:getDimensions()
+      local cw, ch = ctx.uiCanvas:getDimensions()
+
+      love.graphics.push("all")
+      love.graphics.origin()
+      love.graphics.setScissor()
+      love.graphics.setBlendMode("alpha")
+      love.graphics.clear(0, 0, 0, 1)
+      love.graphics.setColor(1, 1, 1, 1)
+
+      -- grass.png is 240x135, so 1920x1080 is exactly 8x nearest-neighbor.
+      love.graphics.draw(img, 0, 0, 0, ww / iw, wh / ih)
+
+      -- The vanilla terrain/platform layer is transparent; battlers and HUD
+      -- remain above the fullscreen background.
+      ctx.uiCanvas:setFilter("nearest", "nearest")
+      love.graphics.draw(ctx.uiCanvas, 0, 0, 0, ww / cw, wh / ch)
+      love.graphics.pop()
+      return true
+    end)
   end
 
   -- Gen 3's stock battle renderer hard-codes a 32,32 origin because vanilla
