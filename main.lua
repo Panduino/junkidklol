@@ -97,9 +97,9 @@ return function(mod)
     { id="FR_CERULEAN_CAVE_1F", habitat="rare", min=38, max=46, gen=4, base={morning={68,68,68,68,68,47,47,47,47,57,57,57,53,53,53,82,82,132,132,42,42,101,202,359,296,436,433,376,26,447},day={68,68,68,68,68,47,47,47,47,57,57,57,53,53,53,82,82,132,132,42,42,101,202,359,296,436,433,376,26,447},night={42,42,42,42,47,47,47,47,68,68,68,68,82,82,132,132,57,57,53,53,101,202,359,296,436,433,376,26,447}} },
     { id="FR_CERULEAN_CAVE_B1F", habitat="rare", min=42, max=49, gen=4, base={morning={47,47,47,47,47,64,64,64,64,82,82,82,42,42,68,68,132,132,101,202,359,296,436,433,376,26,447},day={47,47,47,47,47,64,64,64,64,82,82,82,42,42,68,68,132,132,101,202,359,296,436,433,376,26,447},night={47,47,47,47,47,64,64,64,64,82,82,82,42,42,68,68,132,132,101,202,359,296,436,433,376,26,447}} },
     { id="FR_CERULEAN_CAVE_B2F", habitat="rare", min=40, max=46, gen=4, base={morning={47,47,47,47,64,64,64,64,68,68,68,68,42,42,82,82,132,132,101,202,359,296,436,433,376,26,447},day={47,47,47,47,64,64,64,64,68,68,68,68,42,42,82,82,132,132,101,202,359,296,436,433,376,26,447},night={42,42,42,42,47,47,47,47,64,64,64,64,68,68,82,82,132,132,101,202,359,296,436,433,376,26,447}} },
-    { id="FR_VICTORY_ROAD_1F", habitat="mountain", min=32, max=36, gen=4, base={morning={42,75,232,217,95,111,359,296,436,433},day={42,75,232,217,95,111,359,296,436,433},night={42,75,232,217,95,111,359,296,436,433}} },
-    { id="FR_VICTORY_ROAD_2F", habitat="mountain", min=34, max=38, gen=4, base={morning={42,75,232,217,95,111,359,296,436,433},day={42,75,232,217,95,111,359,296,436,433},night={42,75,232,217,95,111,359,296,436,433}} },
-    { id="FR_VICTORY_ROAD_3F", habitat="mountain", min=36, max=40, gen=4, base={morning={42,75,232,217,95,111,359,296,436,433},day={42,75,232,217,95,111,359,296,436,433},night={42,75,232,217,95,111,359,296,436,433}} },
+    { id="FR_VICTORY_ROAD_1F", habitat="mountain", min=32, max=36, gen=4, base={morning={42,75,232,217,95,111,359,296,436,433,76,208},day={42,75,232,217,95,111,359,296,436,433,76,208},night={42,75,232,217,95,111,359,296,436,433,76,208}} },
+    { id="FR_VICTORY_ROAD_2F", habitat="mountain", min=34, max=38, gen=4, base={morning={42,75,232,217,95,111,359,296,436,433,76,208},day={42,75,232,217,95,111,359,296,436,433,76,208},night={42,75,232,217,95,111,359,296,436,433,76,208}} },
+    { id="FR_VICTORY_ROAD_3F", habitat="mountain", min=36, max=40, gen=4, base={morning={42,75,232,217,95,111,359,296,436,433,76,208},day={42,75,232,217,95,111,359,296,436,433,76,208},night={42,75,232,217,95,111,359,296,436,433,76,208}} },
     { id="FR_SAFARI_ZONE_CENTER", habitat="safari", min=22, max=35, gen=4, base={morning={115,111,128,29},day={115,111,128,29},night={115,128,215,198}} },
     { id="FR_SAFARI_ZONE_EAST", habitat="safari", min=22, max=35, gen=4, base={morning={115,111,128,56},day={115,111,128,56},night={115,128,215,198}} },
     { id="FR_SAFARI_ZONE_NORTH", habitat="safari", min=22, max=35, gen=4, base={morning={115,111,128,35},day={115,111,128,35},night={115,128,215,198}} },
@@ -392,6 +392,67 @@ return function(mod)
     if type(Pokemon) ~= "table" or type(Pokemon.types) ~= "function" then
       mod.log:error("Untamed Advanced did not expose Pokemon.types")
       return false
+    end
+
+    -- Replace every Gen 1-4 trade / held-item trade evolution with a normal
+    -- level-up evolution so the full dex remains obtainable in single-player.
+    -- FireRed evolution method 4 is EVO_LEVEL; National Dex species use
+    -- their dex number + 64 as the live engine slot.
+    do
+      local EVO_LEVEL = 4
+      local function slot(nat) return nat <= 386 and nat or nat + 64 end
+      local levelEvos = {
+        -- Gen 1 plain trades.
+        {64,65,36},   -- Kadabra -> Alakazam
+        {67,68,36},   -- Machoke -> Machamp
+        {75,76,36},   -- Graveler -> Golem
+        {93,94,36},   -- Haunter -> Gengar
+
+        -- Gen 2 held-item trades / trade evolutions.
+        {61,186,37},  -- Poliwhirl -> Politoed
+        {79,199,37},  -- Slowpoke -> Slowking
+        {95,208,40},  -- Onix -> Steelix
+        {123,212,40}, -- Scyther -> Scizor
+        {117,230,40}, -- Seadra -> Kingdra
+        {137,233,30}, -- Porygon -> Porygon2
+
+        -- Gen 3 split Clamperl trade evolutions.
+        {366,367,35}, -- Clamperl -> Huntail
+        {366,368,36}, -- Clamperl -> Gorebyss
+
+        -- Gen 4 held-item trade evolutions.
+        {112,464,42}, -- Rhydon -> Rhyperior
+        {125,466,40}, -- Electabuzz -> Electivire
+        {126,467,40}, -- Magmar -> Magmortar
+        {233,474,45}, -- Porygon2 -> Porygon-Z
+        {356,477,45}, -- Dusclops -> Dusknoir
+      }
+
+      local function installTradeLevelEvos()
+        local ok, P = pcall(require, "src.core.game3.pokemon")
+        if not (ok and type(P) == "table") then return end
+        P._evolutions = P._evolutions or {}
+
+        for _, evo in ipairs(levelEvos) do
+          local source, target, level = slot(evo[1]), slot(evo[2]), evo[3]
+          local rows = P._evolutions[source] or {}
+          P._evolutions[source] = rows
+
+          -- Remove the original route to this target (trade / trade-item)
+          -- and replace it with one deterministic level-up row.
+          local kept = {}
+          for _, row in ipairs(rows) do
+            if row.target ~= target then kept[#kept + 1] = row end
+          end
+          kept[#kept + 1] = { method = EVO_LEVEL, param = level, target = target }
+          P._evolutions[source] = kept
+        end
+      end
+
+      installTradeLevelEvos()
+      if type(Pokemon.onReload) == "function" then
+        Pokemon.onReload("rtc_untamed_trade_evos", installTradeLevelEvos)
+      end
     end
 
     -- Pattern Bush and Berry Forest have rare visible Mythical encounters. These are injected
