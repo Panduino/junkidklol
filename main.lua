@@ -1653,6 +1653,91 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       return true
     end
 
+    -- Regi trio: stationary Sevii encounters. They are always present once
+    -- their locations are reachable and disappear permanently only when caught.
+    local REGI_ENCOUNTERS = {
+      { nat=378, species=378, map="FR_FOUR_ISLAND_ICEFALL_CAVE_BACK", x=12, y=8, id=123, tick=0 }, -- Regice
+      { nat=379, species=379, map="FR_FIVE_ISLAND_ROCKET_WAREHOUSE", x=13, y=8, id=124, tick=7 }, -- Registeel
+      { nat=377, species=377, map="FR_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER", x=11, y=8, id=125, tick=14 }, -- Regirock
+    }
+    local regiActors, regiBusy = {}, false
+
+    local function clearRegiActor(def)
+      if Objects._byId and Objects._byId[def.id] then
+        Objects._byId[def.id] = nil
+        for i = #(Objects._order or {}), 1, -1 do
+          if Objects._order[i] == def.id then table.remove(Objects._order, i) end
+        end
+      end
+      regiActors[def.id] = nil
+    end
+
+    local function showRegis()
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      for _, def in ipairs(REGI_ENCOUNTERS) do
+        local caught = session and session.dex and Dex.isCaught(session.dex, def.species) == true
+        local shouldShow = session and session.map == def.map and not caught and not regiBusy
+        if not shouldShow then
+          clearRegiActor(def)
+        elseif not (regiActors[def.id] and Objects._byId and Objects._byId[def.id] == regiActors[def.id]) then
+          clearRegiActor(def)
+          if Objects._byId and Objects._order then
+            local personality = engine.random32 and engine.random32() or 0
+            local atlasSpecies = engine.expansionSpecies(def.species, personality)
+            local female = engine.femaleFor and engine.femaleFor(def.species, personality) or false
+            local sheet, row = atlasSpecies and engine.Gfx.sheetFor(atlasSpecies, female, false)
+            if sheet then
+              local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
+              local elevation = engine.elevationAt and engine.elevationAt(def.x, def.y) or 3
+              local actor = {
+                active=true, localId=def.id, originLocalId=def.id, originMapId=session.map,
+                cellX=def.x, cellY=def.y, px=def.x*16, py=def.y*16,
+                homeX=def.x, homeY=def.y, targetX=def.x, targetY=def.y,
+                facing="down", sprite=graphicsId, graphicsId=graphicsId,
+                elevation=elevation, currentElevation=elevation,
+                movementType=0x09, movement="STAY", range="DOWN",
+                radius={x=0,y=0}, rangeX=0, rangeY=0,
+                visible=true, hidden=false, invisible=false, frozen=true,
+                passable=false, moving=false, progress=0, stepFrames=16,
+                scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=def.tick,
+                def={localId=def.id,x=def.x,y=def.y,graphicsId=graphicsId,movementType=0x09,facing="down"},
+              }
+              Objects._byId[def.id] = actor
+              Objects._order[#Objects._order + 1] = def.id
+              regiActors[def.id] = actor
+            end
+          end
+        end
+      end
+    end
+
+    local function triggerRegi()
+      if regiBusy then return false end
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      if not session then return false end
+      local P = engine.Player
+      for _, def in ipairs(REGI_ENCOUNTERS) do
+        local actor = regiActors[def.id]
+        if actor and actor.active and session.map == def.map
+          and math.abs(P.cellX - actor.cellX) + math.abs(P.cellY - actor.cellY) == 1 then
+          regiBusy = true
+          engine.Field.locked = true
+          if P.cellX < actor.cellX then P.facing = "right"
+          elseif P.cellX > actor.cellX then P.facing = "left"
+          elseif P.cellY < actor.cellY then P.facing = "down"
+          else P.facing = "up" end
+          clearRegiActor(def)
+          mod.world:startWildBattle(def.species, 50, function()
+            engine.Field.locked = false
+            regiBusy = false
+            showRegis()
+          end)
+          return true
+        end
+      end
+      return false
+    end
+
     -- Manaphy / Phione: after becoming Champion, the Route 5 Day Care man
     -- gives one genuine Manaphy Egg. Manaphy + Ditto then produces Phione
     -- through the normal two-parent Day Care breeding system.
@@ -1816,6 +1901,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       end
       showTowerDarkrai()
       showCresselia()
+      showRegis()
       tryTicketEvents()
     end)
     mod.events:on("world.stepped", function(ev)
@@ -1824,6 +1910,8 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       triggerDarkraiScene()
       showCresselia()
       triggerCresseliaScene()
+      showRegis()
+      triggerRegi()
       tryTicketEvents()
     end)
 
