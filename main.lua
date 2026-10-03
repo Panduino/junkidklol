@@ -315,7 +315,18 @@ return function(mod)
   local cache = {}
 
   local function entry(nat, minLevel, maxLevel)
-    local species = nat <= 386 and nat or nat + 64
+    -- Never derive an engine SPECIES id arithmetically. FRLG's internal
+    -- species order is not National Dex order, and expansion packs may add
+    -- their own slots. Resolve through the installed Pokemon/NatDex mapping.
+    local species = nil
+    local ok, P = pcall(require, "src.core.game3.pokemon")
+    if ok and P and type(P.speciesFromNational) == "function" then
+      species = P.speciesFromNational(nat)
+    end
+    species = species or (nat <= 251 and nat or nil)
+    if not species then
+      error("No internal species mapping for National Dex #" .. tostring(nat))
+    end
     return { species = species, minLevel = minLevel, maxLevel = maxLevel }
   end
 
@@ -453,7 +464,10 @@ return function(mod)
     -- their dex number + 64 as the live engine slot.
     do
       local EVO_LEVEL = 4
-      local function slot(nat) return nat <= 386 and nat or nat + 64 end
+      local function slot(nat)
+        return Pokemon.speciesFromNational and Pokemon.speciesFromNational(nat)
+          or (nat <= 251 and nat or nil)
+      end
       local levelEvos = {
         -- Gen 1 plain trades.
         {64,65,36},   -- Kadabra -> Alakazam
@@ -488,6 +502,7 @@ return function(mod)
 
         for _, evo in ipairs(levelEvos) do
           local source, target, level = slot(evo[1]), slot(evo[2]), evo[3]
+          if source and target then
           local rows = P._evolutions[source] or {}
           P._evolutions[source] = rows
 
@@ -499,6 +514,7 @@ return function(mod)
           end
           kept[#kept + 1] = { method = EVO_LEVEL, param = level, target = target }
           P._evolutions[source] = kept
+          end
         end
       end
 
@@ -1751,7 +1767,8 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
     -- gives one genuine Manaphy Egg. Manaphy + Ditto then produces Phione
     -- through the normal two-parent Day Care breeding system.
     local MANAPHY_NAT, PHIONE_NAT = 490, 489
-    local MANAPHY_SPECIES, PHIONE_SPECIES = MANAPHY_NAT + 64, PHIONE_NAT + 64
+    local MANAPHY_SPECIES = Pokemon.speciesFromNational(MANAPHY_NAT)
+    local PHIONE_SPECIES = Pokemon.speciesFromNational(PHIONE_NAT)
     local ROUTE5_DAYCARE = "FR_ROUTE_5_POKEMON_DAY_CARE"
     local manaphyGiftBusy = false
 
