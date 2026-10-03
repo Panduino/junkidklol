@@ -41,40 +41,50 @@ return function(mod)
     slotToId = {}
     local reg = mod.content and mod.content.pokemon
     if not reg then return end
-    local ok, ids = pcall(function() return reg:each() end)
-    if not ok then return end
-    if type(ids) == "function" then
-      for id in ids do
-        local good, r = pcall(function() return reg:get(id) end)
-        if good and type(r) == "table" then
-          local slot = tonumber(r.gen3Species or r.index)
-          if slot then slotToId[slot] = tostring(id):upper() end
-        end
-      end
-    elseif type(ids) == "table" then
-      for _, id in ipairs(ids) do
-        local good, r = pcall(function() return reg:get(id) end)
-        if good and type(r) == "table" then
-          local slot = tonumber(r.gen3Species or r.index)
-          if slot then slotToId[slot] = tostring(id):upper() end
-        end
+    local ok, iter = pcall(function() return reg:each() end)
+    if not ok or type(iter) ~= "function" then return end
+    while true do
+      local id, r = iter()
+      if id == nil then break end
+      if type(r) == "table" then
+        local slot = tonumber(r.gen3Species or r.index or r.species)
+        if slot then slotToId[slot] = tostring(id):upper() end
       end
     end
   end
 
   local function locateG9(game)
     local loader = game and game.mods
-    local rec = loader and loader.mods and loader.mods[G9_ID]
-    local root = rec and rec.path
-    if not root then
-      mod.log:error("installed G9 Battle Sprites mod could not be located")
+    if not loader then
+      mod.log:error("mod loader is unavailable")
       return false
     end
+
+    -- Deliberately inspect the loader's discovered records rather than
+    -- mod:find().  G9 declares Gen 1/2 only, so on a Gen 3 boot it is present
+    -- on disk but inactive/incompatible and therefore invisible to mod:find().
+    local rec = loader.mods and loader.mods[G9_ID]
+    if not rec and loader.available then
+      for _, candidate in pairs(loader.available) do
+        local man = candidate and candidate.manifest
+        if (man and man.id == G9_ID) or candidate.id == G9_ID then
+          rec = candidate
+          break
+        end
+      end
+    end
+    local root = rec and rec.path
+    if not root then
+      mod.log:warn("G9 Battle Sprites release is not installed; using normal Gen 3 sprites")
+      return false
+    end
+
     local fs = loader.fs
     if not (fs and fs.read) then
       mod.log:error("mod filesystem is unavailable")
       return false
     end
+    loaderFs = fs
     local raw = fs.read(root .. "/data/dbk_data.lua")
     local data, err = loadChunk(raw, "@g9-battle-sprites/data/dbk_data.lua")
     if type(data) ~= "table" or type(data.species) ~= "table" then
@@ -101,8 +111,7 @@ return function(mod)
   end
 
   local function fileExists(path)
-    local game = mod.game
-    local fs = game and game.mods and game.mods.fs
+    local fs = loaderFs
     if not (fs and fs.getInfo) then return true end
     local ok, info = pcall(fs.getInfo, path)
     return ok and info and info.type == "file"
