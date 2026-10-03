@@ -1869,6 +1869,17 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       tryTicketEvents()
     end)
 
+    -- Keep National Dex Gen3's full species registry intact for compatibility,
+    -- but cap FireRed's visible National Pokédex at Gen 4 (#493, Arceus).
+    -- PokedexData reads Dex.NATIONAL_MAX when building numerical and filtered
+    -- National lists, so species #494+ remain registered but are not browsable.
+    do
+      local okDex, Dex = pcall(require, "src.core.game3.dex")
+      if okDex and type(Dex) == "table" then
+        Dex.NATIONAL_MAX = 493
+      end
+    end
+
     mod.exports.engine = engine
     mod.exports.period = currentPeriod
     mod.exports.tables = PROFILES
