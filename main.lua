@@ -171,7 +171,7 @@ return function(mod)
     -- Back sprites sit much closer to the camera in G9. Allow small backs to
     -- grow instead of permanently capping every trimmed sheet at 1:1.
     local naturalScale = 1
-    local targetScale = back and 1.5 or 1
+    local targetScale = 1.5
     local scale = math.min(naturalScale, maxW / cw, maxH / ch)
     local drawScale = math.min(targetScale, maxW / cw, maxH / ch)
     local dw = math.max(1, math.floor(cw * scale + 0.5))
@@ -263,7 +263,7 @@ return function(mod)
           local normalBy = math.min(by, 15)
           return -6 + math.floor(normalBy * 0.5 + 0.5)
         end)()
-        or (8 + math.floor(((metric and tonumber(metric.fy)) or 0) * 0.5 + 0.5)),
+        or (4 + math.floor(((metric and tonumber(metric.fy)) or 0) * 0.5 + 0.5)),
     }
     return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
   end
