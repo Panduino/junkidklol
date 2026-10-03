@@ -365,6 +365,7 @@ Fishing slots follow FireRed: Old Rod 1–2, Good Rod 3–5, Super Rod 6–10.
 ### Route 4 — Lv. 5–10
 
 - **Surf:** Goldeen (#118), Seaking (#119), Squirtle (#7), Krabby (#98), Horsea (#116)
+- **Night-only Surf addition:** Totodile (#158)
 - **Old Rod:** Magikarp (#129), Goldeen (#118)
 - **Good Rod:** Goldeen (#118), Magikarp (#129), Seaking (#119)
 - **Super Rod:** Goldeen (#118), Seaking (#119), Magikarp (#129)
@@ -437,7 +438,7 @@ Fishing slots follow FireRed: Old Rod 1–2, Good Rod 3–5, Super Rod 6–10.
 - **Surf:** Tentacool (#72), Tentacruel (#73), Mudkip (#258), Piplup (#393)
 - **Old Rod:** Magikarp (#129), Krabby (#98)
 - **Good Rod:** Krabby (#98), Magikarp (#129), Corsola (#222)
-- **Super Rod:** Krabby (#98), Corsola (#222), Magikarp (#129), Tentacruel (#73)
+- **Super Rod:** Krabby (#98), Corsola (#222), Magikarp (#129), Tentacruel (#73), Relicanth (#369)
 
 ### Route 22 — Lv. 3–8
 
@@ -1041,15 +1042,6 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 492 | Shaymin | Pattern Bush |
 | 493 | Arceus | Not currently supplied by this compatibility mod |
 
-### Known Obtainability Gaps
-
-The current encounter logic still leaves these evolutionary families without a complete in-mod acquisition path:
-
-- **Totodile / Croconaw / Feraligatr** — Totodile is listed as a missing Water-family representative, but Water-family representatives are skipped by the generated land assignment and Totodile is not currently present in `WATER_ADDITIONS`.
-- **Mantine / Mantyke** — Mantine is likewise skipped by the land generator and is not currently assigned to a water table.
-- **Relicanth** — listed as a missing Water-family representative but not currently assigned to a water table.
-
-These are documented as gaps rather than attributing them to an unspecified National Dex implementation. If the goal is complete single-player #001–#493 family coverage, these three water-family gaps should be assigned encounter locations in `main.lua`.
 
 ## Notes
 
