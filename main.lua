@@ -571,9 +571,11 @@ return function(mod)
 
         local function active(nat, species)
           for _, actor in ipairs(engine.actors or {}) do
+            -- Untamed's actor.species is the expanded atlas species, not
+            -- the National Dex number. engineSpecies is the battle/internal
+            -- species and is the only valid identity check here.
             if actor and actor.active and actor.oweType
-                and (tonumber(actor.engineSpecies) == species
-                  or tonumber(actor.species) == nat) then
+                and tonumber(actor.engineSpecies) == species then
               return true
             end
           end
