@@ -141,39 +141,46 @@ return function(mod)
     if not okData or not sheetData then return nil end
 
     local sw, sh = sheetData:getDimensions()
-    local fw, fh = sh, sh
-    if fw <= 0 or sw < fw then return nil end
-    local count = math.max(1, math.floor(sw / fw + 0.0001))
-    local frames = {}
+    local count = math.max(1, math.floor((sw + sh / 2) / sh))
+    local fw = math.floor(sw / count)
+    if fw < 1 then return nil end
 
-    -- Preserve G9/DBK's authored scale.  The source pack uses 2x front and
-    -- 3x back render scales; convert source pixels back to screen pixels and
-    -- only shrink when a genuinely large Pokemon would overrun the Gen 3
-    -- battle scene.  There is intentionally no 64x64 output canvas.
-    local packScale = back and 3 or 2
+    -- Match G9 natural mode: scan the whole animation once for a UNION content
+    -- box so individual frames never jitter, keep that trimmed art at 1:1, and
+    -- only shrink if the species is too large for the available Gen 3 field.
+    local ux0, uy0, ux1, uy1 = fw, sh, -1, -1
+    for y = 0, sh - 1 do
+      for x = 0, sw - 1 do
+        local _, _, _, alpha = sheetData:getPixel(x, y)
+        if alpha and alpha > 0.01 then
+          local lx = x % fw
+          if lx < ux0 then ux0 = lx end
+          if lx > ux1 then ux1 = lx end
+          if y < uy0 then uy0 = y end
+          if y > uy1 then uy1 = y end
+        end
+      end
+    end
+    if ux1 < ux0 or uy1 < uy0 then return nil end
+
+    local cw, ch = ux1 - ux0 + 1, uy1 - uy0 + 1
+    -- FireRed's stock renderer has a 64px picture box, but G9 natural art may
+    -- be larger. These are scene headroom limits, not target sprite sizes.
     local maxW = back and 112 or 96
     local maxH = back and 104 or 88
+    local scale = math.min(1, maxW / cw, maxH / ch)
+    local dw = math.max(1, math.floor(cw * scale + 0.5))
+    local dh = math.max(1, math.floor(ch * scale + 0.5))
+    local frames = {}
 
     for i = 0, count - 1 do
-      local frameData = love.image.newImageData(fw, fh)
-      frameData:paste(sheetData, 0, 0, i * fw, 0, fw, fh)
-      local bx, by, bw, bh = opaqueBounds(frameData)
-
-      local scale = 1 / packScale
-      local dw, dh = bw * scale, bh * scale
-      if dw > maxW or dh > maxH then
-        local fit = math.min(maxW / dw, maxH / dh)
-        scale = scale * fit
-        dw, dh = bw * scale, bh * scale
-      end
-
-      local outW = math.max(1, math.floor(dw + 0.5))
-      local outH = math.max(1, math.floor(dh + 0.5))
-      local canvas = love.graphics.newCanvas(outW, outH)
-      canvas:setFilter("nearest", "nearest")
+      local frameData = love.image.newImageData(fw, sh)
+      frameData:paste(sheetData, 0, 0, i * fw, 0, fw, sh)
       local frameImg = love.graphics.newImage(frameData)
       frameImg:setFilter("nearest", "nearest")
-      local quad = love.graphics.newQuad(bx, by, bw, bh, fw, fh)
+      local quad = love.graphics.newQuad(ux0, uy0, cw, ch, fw, sh)
+      local canvas = love.graphics.newCanvas(dw, dh)
+      canvas:setFilter("nearest", "nearest")
 
       local old = love.graphics.getCanvas()
       love.graphics.setCanvas(canvas)
