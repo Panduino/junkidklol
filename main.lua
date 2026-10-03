@@ -1659,6 +1659,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       { nat=378, species=378, map="FR_FOUR_ISLAND_ICEFALL_CAVE_BACK", x=12, y=8, id=123, tick=0 }, -- Regice
       { nat=379, species=379, map="FR_FIVE_ISLAND_ROCKET_WAREHOUSE", x=13, y=8, id=124, tick=7 }, -- Registeel
       { nat=377, species=377, map="FR_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER", x=11, y=8, id=125, tick=14 }, -- Regirock
+      { nat=486, species=550, map="FR_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM", x=7, y=7, id=128, tick=5, requiresRegis=true }, -- Regigigas
     }
     local regiActors, regiBusy = {}, false
 
@@ -1676,7 +1677,14 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
       for _, def in ipairs(REGI_ENCOUNTERS) do
         local caught = session and session.dex and Dex.isCaught(session.dex, def.species) == true
-        local shouldShow = session and session.map == def.map and not caught and not regiBusy
+        local unlocked = true
+        if def.requiresRegis then
+          unlocked = session and session.dex
+            and Dex.isCaught(session.dex, 377) == true
+            and Dex.isCaught(session.dex, 378) == true
+            and Dex.isCaught(session.dex, 379) == true
+        end
+        local shouldShow = session and session.map == def.map and unlocked and not caught and not regiBusy
         if not shouldShow then
           clearRegiActor(def)
         elseif not (regiActors[def.id] and Objects._byId and Objects._byId[def.id] == regiActors[def.id]) then
@@ -1727,7 +1735,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
           elseif P.cellY < actor.cellY then P.facing = "down"
           else P.facing = "up" end
           clearRegiActor(def)
-          mod.world:startWildBattle(def.species, 50, function()
+          mod.world:startWildBattle(def.species, def.nat == 486 and 70 or 50, function()
             engine.Field.locked = false
             regiBusy = false
             showRegis()
