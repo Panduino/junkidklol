@@ -1678,7 +1678,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       { nat=378, species=378, map="FR_FOUR_ISLAND_ICEFALL_CAVE_BACK", x=12, y=8, id=123, tick=0 }, -- Regice
       { nat=379, species=379, map="FR_FIVE_ISLAND_ROCKET_WAREHOUSE", x=13, y=8, id=124, tick=7 }, -- Registeel
       { nat=377, species=377, map="FR_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER", x=11, y=8, id=125, tick=14 }, -- Regirock
-      { nat=486, species=Pokemon.speciesFromNational(486), map="FR_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM", x=7, y=7, id=128, tick=5, requiresRegis=true }, -- Regigigas
+      { nat=486, species=Pokemon.speciesFromNational(486), map="FR_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM", x=7, y=7, id=128, tick=5, requiresRegis=true, requiresSapphire=true }, -- Regigigas
       { nat=485, species=Pokemon.speciesFromNational(485), map="FR_MT_EMBER_RUBY_PATH_B5F", x=7, y=7, id=129, tick=11, requiresRuby=true }, -- Heatran
     }
     local regiActors, regiBusy = {}, false
@@ -1703,6 +1703,22 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
             and Dex.isCaught(session.dex, 377) == true
             and Dex.isCaught(session.dex, 378) == true
             and Dex.isCaught(session.dex, 379) == true
+        end
+        if def.requiresSapphire then
+          local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
+          local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
+          local recoveredSapphire = okSpace and okFlags and Space and Space.store and Flags
+            and Flags.getFlag(Space.store, nil, "FLAG_RECOVERED_SAPPHIRE") == true
+          local hasSapphire = false
+          if session and session.bag then
+            local okBag, Bag = pcall(require, "src.core.game3.bag")
+            hasSapphire = okBag and Bag and type(Bag.has) == "function"
+              and Bag.has(session.bag, 374, 1) == true
+          end
+          -- Keep the Regi-trio requirement above, and additionally require
+          -- the Sapphire quest to have reached recovery/pickup. The key-item
+          -- fallback covers saves where the story flag store is out of sync.
+          unlocked = unlocked and (recoveredSapphire or hasSapphire)
         end
         if def.requiresRuby then
           local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
