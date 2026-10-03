@@ -397,7 +397,7 @@ return function(mod)
       return false
     end
 
-    -- Pattern Bush has a rare visible Shaymin encounter.  This is injected
+    -- Pattern Bush and Berry Forest have rare visible Mythical encounters. These are injected
     -- only while Untamed is generating OWEs, so normal grass battles keep
     -- their regular encounter table.
     do
@@ -406,26 +406,35 @@ return function(mod)
         local Dex = require("src.core.game3.dex")
         local SHAYMIN_NAT = 492
         local SHAYMIN_SPECIES = SHAYMIN_NAT + 64
+        local CELEBI_NAT = 251
+        local CELEBI_SPECIES = CELEBI_NAT
         local rawTick = Owe.tick
         local rawWildArea = engine.wildArea
         local inOweTick = false
 
-        local function patternBush()
+        local function currentRareMythical()
           local id = tostring(engine.mapId and engine.mapId() or ""):upper()
-          return id:find("PATTERN_BUSH", 1, true) ~= nil
-            or id:find("PATTERNBUSH", 1, true) ~= nil
+          if id:find("PATTERN_BUSH", 1, true) ~= nil
+              or id:find("PATTERNBUSH", 1, true) ~= nil then
+            return SHAYMIN_NAT, SHAYMIN_SPECIES
+          end
+          if id:find("BERRY_FOREST", 1, true) ~= nil
+              or id:find("BERRYFOREST", 1, true) ~= nil then
+            return CELEBI_NAT, CELEBI_SPECIES
+          end
+          return nil, nil
         end
 
-        local function shayminCaught()
+        local function mythicalCaught(species)
           local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-          return session and session.dex and Dex.isCaught(session.dex, SHAYMIN_SPECIES) == true
+          return session and session.dex and Dex.isCaught(session.dex, species) == true
         end
 
-        local function shayminActive()
+        local function mythicalActive(nat, species)
           for _, actor in ipairs(engine.actors or {}) do
             if actor and actor.active and actor.oweType
-                and (tonumber(actor.engineSpecies) == SHAYMIN_SPECIES
-                  or tonumber(actor.species) == SHAYMIN_NAT) then
+                and (tonumber(actor.engineSpecies) == species
+                  or tonumber(actor.species) == nat) then
               return true
             end
           end
@@ -434,8 +443,9 @@ return function(mod)
 
         engine.wildArea = function(header, kind)
           local slots = rawWildArea(header, kind)
-          if not inOweTick or kind ~= "land" or not patternBush()
-              or shayminCaught() or shayminActive()
+          local nat, species = currentRareMythical()
+          if not inOweTick or kind ~= "land" or not species
+              or mythicalCaught(species) or mythicalActive(nat, species)
               or type(slots) ~= "table" or #slots == 0 then
             return slots
           end
@@ -445,7 +455,7 @@ return function(mod)
             local source = slots[i] or slots[#slots]
             rare[i] = source
           end
-          rare[12] = { species = SHAYMIN_SPECIES, minLevel = 50, maxLevel = 50 }
+          rare[12] = { species = species, minLevel = 50, maxLevel = 50 }
           return rare
         end
 
