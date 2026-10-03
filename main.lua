@@ -391,25 +391,27 @@ return function(mod)
           local baseSx = sx or 1
           local baseSy = sy or baseSx
           local ds = meta.drawScale or 1
-          sx = baseSx * ds
-          sy = baseSy * ds
           -- G9 frames are union-trimmed canvases, not FireRed's fixed 64x64
-          -- pictures. Center each trimmed image on the battler anchor instead
-          -- of retaining the native hard-coded 32,32 origin.
+          -- pictures. Backs keep the established FireRed transform because
+          -- their placement/scale is already correct. Fronts must NOT inherit
+          -- FireRed's per-picture scale: the G9 image itself is already the
+          -- authored native-size battler.
           if meta.g9Back then
+            sx = baseSx * ds
+            sy = baseSy * ds
             local iw, ih = drawable:getDimensions()
             ox = iw * 0.5
             oy = ih * 0.5
           else
-            -- Preserve the exact pre-reanchor front render path: do not
-            -- replace FireRed's supplied origin or sampling behavior. Shift
-            -- only the draw coordinates so the old rendering lands on the
-            -- new centered enemy anchor.
             local iw, ih = drawable:getDimensions()
             local nativeOx = tonumber(ox) or 32
             local nativeOy = tonumber(oy) or 32
-            x = (x or 0) + (nativeOx - iw * 0.5) * (sx or 1)
-            y = (y or 0) + (nativeOy - ih * 0.5) * (sy or sx or 1)
+            -- First preserve the same visual anchor using the transform that
+            -- FireRed supplied, then discard that transform for the G9 draw.
+            x = (x or 0) + (nativeOx - iw * 0.5) * baseSx
+            y = (y or 0) + (nativeOy - ih * 0.5) * baseSy
+            sx, sy = 1, 1
+            ox, oy = 0, 0
           end
         end
         return realDraw(drawable, x, y, r, sx, sy, ox, oy, ...)
