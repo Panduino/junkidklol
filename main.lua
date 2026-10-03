@@ -228,7 +228,16 @@ return function(mod)
     local img = currentFrame(frames)
     if not img then return nil end
     local w, h = img:getDimensions()
-    return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back, g9OffsetX = back and -12 or 0 }
+    local stem = stemFor(slot)
+    local metric = stem and g9Metrics and g9Metrics[stem] or nil
+    -- Back sprites need a scene-level correction left. Enemy fronts use G9's
+    -- own per-species FrontSprite Y metric, so short/low-bodied species are
+    -- lowered individually instead of moving every enemy by the same amount.
+    imageMeta[img] = {
+      ox = back and -20 or 0,
+      oy = (not back and metric and tonumber(metric.fy)) or 0,
+    }
+    return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
   end
 
   Pokemon.frontPic = function(slot, form, shiny, personality)
@@ -241,6 +250,32 @@ return function(mod)
     local rep = replacement(slot, true, shiny)
     if rep then return rep end
     return originalBack(slot, form, shiny)
+  end
+
+  -- Gen 3's stock battle renderer hard-codes a 32,32 origin because vanilla
+  -- pics are 64x64. Intercept only draws of our G9 images: use their real
+  -- centre as the origin and apply the scene/alignment corrections above.
+  local okUi, Ui = pcall(require, "src.core.game3.battle.ui")
+  if okUi and Ui and type(Ui.draw) == "function" then
+    local originalUiDraw = Ui.draw
+    Ui.draw = function(...)
+      local realDraw = love and love.graphics and love.graphics.draw
+      if type(realDraw) ~= "function" then return originalUiDraw(...) end
+      love.graphics.draw = function(drawable, x, y, r, sx, sy, ox, oy, ...)
+        local meta = imageMeta[drawable]
+        if meta then
+          local iw, ih = drawable:getDimensions()
+          x = (x or 0) + (meta.ox or 0)
+          y = (y or 0) + (meta.oy or 0)
+          ox, oy = iw / 2, ih / 2
+        end
+        return realDraw(drawable, x, y, r, sx, sy, ox, oy, ...)
+      end
+      local ok, a, b, c, d = pcall(originalUiDraw, ...)
+      love.graphics.draw = realDraw
+      if not ok then error(a, 0) end
+      return a, b, c, d
+    end
   end
 
   mod.events:on("game.ready", function(ev)
