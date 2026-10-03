@@ -240,7 +240,7 @@ return function(mod)
     -- own per-species FrontSprite Y metric, so short/low-bodied species are
     -- lowered individually instead of moving every enemy by the same amount.
     imageMeta[img] = {
-      drawScale = back and (frames._g9DrawScale or 1) or 1,
+      drawScale = frames._g9DrawScale or 1,
       g9Trimmed = true,
       -- Keep the scene correction, but also respect G9's authored back
       -- placement instead of centering every species identically.
@@ -263,7 +263,7 @@ return function(mod)
           local normalBy = math.min(by, 15)
           return -6 + math.floor(normalBy * 0.5 + 0.5)
         end)()
-        or (14 + math.floor(((metric and tonumber(metric.fy)) or 0) * 0.5 + 0.5)),
+        or (8 + math.floor(((metric and tonumber(metric.fy)) or 0) * 0.5 + 0.5)),
     }
     return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
   end
