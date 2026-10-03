@@ -22,7 +22,7 @@ return function(mod)
 
   local G9_ID = "g9-battle-sprites"
   local FPS = 12
-  local g9Root, g9Data, g9Metrics
+  local g9Root, g9Data, g9Metrics, g9Floaters
   local imageMeta = setmetatable({}, { __mode = "k" })
   local slotToId = {}
   local cache = {}
@@ -242,9 +242,19 @@ return function(mod)
       ox = back
         and (-20 + math.floor(((metric and tonumber(metric.bx)) or 0) * 0.5 + 0.5))
         or 0,
+      -- Natural G9 fronts are grounded by their trimmed bottom edge; pack fy
+      -- is deliberately ignored there. FireRed's centre-origin draw needs the
+      -- equivalent correction based on this frame's actual height. Floaters
+      -- receive G9's 35% content-height lift.
       oy = back
         and math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5)
-        or math.floor((((metric and tonumber(metric.fy)) or 0) * 0.5) + 0.5),
+        or (function()
+          local base = 32 - (h / 2)
+          if stem and g9Floaters and g9Floaters[stem] then
+            base = base - math.max(2, math.floor(h * 0.35 + 0.5))
+          end
+          return math.floor(base + 0.5)
+        end)(),
     }
     return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
   end
