@@ -1312,8 +1312,8 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
 
       -- This is the original fossil alcove; the vanilla fossils occupied
-      -- (13,7) and (14,7). Cresselia waits just below those old pedestals.
-      local x, y = 13, 8
+      -- (13,7) and (14,7). Cresselia waits deeper in the open area behind them.
+      local x, y = 13, 5
       local elevation = engine.elevationAt and engine.elevationAt(x, y) or 3
       local actor = {
         active=true, localId=CRESSELIA_NPC_ID, originLocalId=CRESSELIA_NPC_ID,
