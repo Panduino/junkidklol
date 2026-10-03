@@ -798,7 +798,7 @@ return function(mod)
             end
             Field.lock("mew_truck")
             Message.show("Something is hiding under the truck!", function()
-              mod.world:startWildBattle(151, 30, function()
+              mod.world:startWildBattle(151, 50, function()
                 if session.dex and Dex and Dex.isCaught(session.dex, 151) then
                   state.mewCaught = true
                 end
