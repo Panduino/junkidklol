@@ -253,14 +253,14 @@ return function(mod)
       oy = back
         -- Player platform contact point in the authored 240x135 background is
         -- Shift the player/back battler another 12 px left from the authored platform
-        -- anchor to open space between it and the right-side HUD: -19,+33
+        -- anchor to open space between it and the right-side HUD: -19,+25
         -- while retaining G9's species-specific back metric.
-        and (33 + math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5))
+        and (25 + math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5))
         or (function()
           -- Enemy platform contact point is (178,62), versus FireRed's
-          -- ENEMY_MON (176,40): +2,+22. Preserve natural G9 grounding and
+          -- ENEMY_MON (176,40): +2,+14 after fullscreen vertical tuning. Preserve natural G9 grounding and
           -- floater lift relative to that authored contact point.
-          local base = 32 - (h / 2) + 22
+          local base = 32 - (h / 2) + 14
           if stem and g9Floaters and g9Floaters[stem] then
             base = base - math.max(2, math.floor(h * 0.35 + 0.5))
           end
@@ -364,10 +364,10 @@ return function(mod)
   -- the 240px Gen3 HUD canvas.
   local okHealthbox, Healthbox = pcall(require, "src.core.game3.battle.healthbox")
   if okHealthbox and Healthbox then
-    Healthbox.PLAYER_CENTER.y = 114
+    Healthbox.PLAYER_CENTER.y = 106
     if Healthbox.CENTERS and Healthbox.CENTERS[false]
         and Healthbox.CENTERS[false][0] then
-      Healthbox.CENTERS[false][0].y = 114
+      Healthbox.CENTERS[false][0].y = 106
     end
   end
 
