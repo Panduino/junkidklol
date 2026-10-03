@@ -1678,7 +1678,6 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       { nat=379, species=379, map="FR_FIVE_ISLAND_ROCKET_WAREHOUSE", x=13, y=8, id=124, tick=7 }, -- Registeel
       { nat=377, species=377, map="FR_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER", x=11, y=8, id=125, tick=14 }, -- Regirock
       { nat=486, species=Pokemon.speciesFromNational(486), map="FR_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM", x=7, y=7, id=128, tick=5, requiresRegis=true, requiresSapphire=true }, -- Regigigas
-      { nat=485, species=Pokemon.speciesFromNational(485), map="FR_MT_EMBER_RUBY_PATH_B5F", x=7, y=7, id=129, tick=11, requiresRuby=true }, -- Heatran
     }
     local regiActors, regiBusy = {}, false
 
@@ -1795,6 +1794,102 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
         end
       end
       return false
+    end
+
+    -- Heatran: dedicated stationary encounter at the former Ruby position.
+    -- Keep this separate from the Regi loop so Ruby-story state and actor
+    -- lifetime cannot be suppressed by shared Regi encounter state.
+    local HEATRAN_SPECIES = Pokemon.speciesFromNational(485)
+    local HEATRAN_MAP = "FR_MT_EMBER_RUBY_PATH_B5F"
+    local HEATRAN_NPC_ID = 129
+    local heatranActor = nil
+    local heatranBusy = false
+
+    local function clearHeatranActor()
+      if Objects._byId and Objects._byId[HEATRAN_NPC_ID] then
+        Objects._byId[HEATRAN_NPC_ID] = nil
+        for i = #(Objects._order or {}), 1, -1 do
+          if Objects._order[i] == HEATRAN_NPC_ID then table.remove(Objects._order, i) end
+        end
+      end
+      heatranActor = nil
+    end
+
+    local function heatranUnlocked(session)
+      local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
+      local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
+      local got = okSpace and okFlags and Space and Space.store and Flags
+        and Flags.getFlag(Space.store, nil, "FLAG_GOT_RUBY") == true
+      if not got and session and session.flags then
+        got = session.flags[0x2DD] == true or session.flags[tostring(0x2DD)] == true
+          or session.flags.FLAG_GOT_RUBY == true
+      end
+      if not got and session and session.bag then
+        local okBag, Bag = pcall(require, "src.core.game3.bag")
+        got = okBag and Bag and type(Bag.has) == "function"
+          and Bag.has(session.bag, 373, 1) == true
+      end
+      return got == true
+    end
+
+    local function showHeatran()
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      local caught = session and session.dex and HEATRAN_SPECIES
+        and Dex.isCaught(session.dex, HEATRAN_SPECIES) == true
+      local shouldShow = session and session.map == HEATRAN_MAP
+        and HEATRAN_SPECIES and heatranUnlocked(session) and not caught and not heatranBusy
+      if not shouldShow then clearHeatranActor(); return end
+      if heatranActor and Objects._byId and Objects._byId[HEATRAN_NPC_ID] == heatranActor then return end
+      clearHeatranActor()
+      if not Objects._byId or not Objects._order then return end
+
+      local personality = engine.random32 and engine.random32() or 0
+      local atlasSpecies = engine.expansionSpecies(HEATRAN_SPECIES, personality)
+      if not atlasSpecies then return end
+      local female = engine.femaleFor and engine.femaleFor(HEATRAN_SPECIES, personality) or false
+      local sheet, row = engine.Gfx.sheetFor(atlasSpecies, female, false)
+      if not sheet then return end
+      local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
+      local x, y = 7, 7
+      local elevation = engine.elevationAt and engine.elevationAt(x, y) or 0
+      local actor = {
+        active=true, localId=HEATRAN_NPC_ID, originLocalId=HEATRAN_NPC_ID,
+        originMapId=session.map, cellX=x, cellY=y, px=x*16, py=y*16,
+        homeX=x, homeY=y, targetX=x, targetY=y,
+        facing="down", sprite=graphicsId, graphicsId=graphicsId,
+        elevation=elevation, currentElevation=elevation,
+        movementType=0x09, movement="STAY", range="DOWN",
+        radius={x=0,y=0}, rangeX=0, rangeY=0,
+        visible=true, hidden=false, invisible=false, frozen=true,
+        passable=false, moving=false, progress=0, stepFrames=16,
+        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=11,
+        def={localId=HEATRAN_NPC_ID,x=x,y=y,graphicsId=graphicsId,
+          movementType=0x09,facing="down"},
+      }
+      Objects._byId[HEATRAN_NPC_ID] = actor
+      Objects._order[#Objects._order + 1] = HEATRAN_NPC_ID
+      heatranActor = actor
+    end
+
+    local function triggerHeatran()
+      if not heatranActor or not heatranActor.active or heatranBusy then return false end
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      if not session or session.map ~= HEATRAN_MAP then return false end
+      local P = engine.Player
+      if math.abs(P.cellX - heatranActor.cellX) + math.abs(P.cellY - heatranActor.cellY) ~= 1 then return false end
+      heatranBusy = true
+      engine.Field.locked = true
+      if P.cellX < heatranActor.cellX then P.facing = "right"
+      elseif P.cellX > heatranActor.cellX then P.facing = "left"
+      elseif P.cellY < heatranActor.cellY then P.facing = "down"
+      else P.facing = "up" end
+      clearHeatranActor()
+      mod.world:startWildBattle(HEATRAN_SPECIES, 70, function()
+        engine.Field.locked = false
+        heatranBusy = false
+        showHeatran()
+      end)
+      return true
     end
 
     -- Manaphy / Phione: after becoming Champion, the Route 5 Day Care man
@@ -1962,6 +2057,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       showTowerDarkrai()
       showCresselia()
       showRegis()
+      showHeatran()
       tryTicketEvents()
     end)
     mod.events:on("world.stepped", function(ev)
@@ -1972,6 +2068,8 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       triggerCresseliaScene()
       showRegis()
       triggerRegi()
+      showHeatran()
+      triggerHeatran()
       tryTicketEvents()
     end)
 
