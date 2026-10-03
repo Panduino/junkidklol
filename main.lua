@@ -253,8 +253,9 @@ return function(mod)
         -- Player platform contact point in the authored 240x135 background is
         -- Shift the player/back battler another 12 px left from the authored platform
         -- anchor to open space between it and the right-side HUD: -28,-6
-        -- while retaining G9's species-specific back metric.
-        and (-6 + math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5))
+        -- while retaining G9's species-specific back metric. G9 back Y is an
+        -- upward lift from the baseline, so subtract it rather than adding it.
+        and (-6 - math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5))
         or (function()
           -- Ground the trimmed front image on one stable authored enemy
           -- contact point, then apply G9's own per-species front Y metric.
