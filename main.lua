@@ -322,8 +322,9 @@ return function(mod)
     end
   end
 
-  -- Gen3 owns a fixed 240x160 UI canvas. Do not stretch the 240x135
-  -- background into that canvas: own the final window composition instead.
+  -- Gen3 owns a fixed 240x160 UI canvas. Draw the 16:9 art underneath it,
+  -- but always continue the render.compose chain so layout/second-screen mods
+  -- such as Kanto Gear still receive the frame and can hide/mirror battle UI.
   if mod.hooks and mod.hooks.wrap then
     mod.hooks:wrap("render.compose", function(next, renderer, ctx)
       local okBattle, Battle = pcall(require, "src.core.game3.battle")
@@ -337,24 +338,25 @@ return function(mod)
       local ww = tonumber(ctx.ww) or love.graphics.getWidth()
       local wh = tonumber(ctx.wh) or love.graphics.getHeight()
       local iw, ih = img:getDimensions()
-      local cw, ch = ctx.uiCanvas:getDimensions()
 
-      love.graphics.push("all")
-      love.graphics.origin()
-      love.graphics.setScissor()
-      love.graphics.setBlendMode("alpha")
-      love.graphics.clear(0, 0, 0, 1)
-      love.graphics.setColor(1, 1, 1, 1)
+      -- Let the normal compositor chain run first. This is essential for
+      -- Kanto Gear: its render.compose wrapper refreshes/pushes the lower
+      -- battle UI and its visibility hooks decide what stays on the upper UI.
+      local handled = next(renderer, ctx)
 
-      -- grass.png is 240x135, so 1920x1080 is exactly 8x nearest-neighbor.
-      love.graphics.draw(img, 0, 0, 0, ww / iw, wh / ih)
-
-      -- The vanilla terrain/platform layer is transparent; battlers and HUD
-      -- remain above the fullscreen background.
-      ctx.uiCanvas:setFilter("nearest", "nearest")
-      love.graphics.draw(ctx.uiCanvas, 0, 0, 0, ww / cw, wh / ch)
-      love.graphics.pop()
-      return true
+      -- If a downstream compositor took ownership of the physical window,
+      -- do not overwrite it. Otherwise place the authored battle background
+      -- beneath the transparent Gen3 scene without short-circuiting the chain.
+      if handled ~= true then
+        love.graphics.push("all")
+        love.graphics.origin()
+        love.graphics.setScissor()
+        love.graphics.setBlendMode("alpha", "premultiplied")
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(img, 0, 0, 0, ww / iw, wh / ih)
+        love.graphics.pop()
+      end
+      return handled
     end)
   end
 
