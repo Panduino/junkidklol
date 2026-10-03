@@ -978,9 +978,19 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
           Flags.setVar(Space.store, ctx, VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 5)
         end
       end
+      local celioReturn
       local function unlock()
-        engine.Field.locked = false
-        mysticTicketBusy, auroraTicketBusy = false, false
+        local function finish()
+          engine.Field.locked = false
+          mysticTicketBusy, auroraTicketBusy = false, false
+        end
+        if celioReturn then
+          local cb = celioReturn
+          celioReturn = nil
+          cb(finish)
+        else
+          finish()
+        end
       end
       local function giveTicket(item, name, nextStep)
         if not Bag.add(session.bag, item, 1) then
@@ -1040,6 +1050,18 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
 
         local x = tonumber(celio.x or (celio.def and celio.def.x)) or 15
         local y = tonumber(celio.y or (celio.def and celio.def.y)) or 6
+        local startX, startY = x, y
+        local startFacing = celio.facing or (celio.def and celio.def.facing)
+        celioReturn = function(done)
+          local back = {}
+          local rx, ry = 9, 8
+          while rx < startX do back[#back + 1] = { kind = "step", dir = "right" }; rx = rx + 1 end
+          while rx > startX do back[#back + 1] = { kind = "step", dir = "left" }; rx = rx - 1 end
+          while ry < startY do back[#back + 1] = { kind = "step", dir = "down" }; ry = ry + 1 end
+          while ry > startY do back[#back + 1] = { kind = "step", dir = "up" }; ry = ry - 1 end
+          if startFacing then back[#back + 1] = { kind = "turn", dir = startFacing } end
+          Objects.startTrack(celioId, back, done)
+        end
         local actions = {}
         while y < 8 do actions[#actions + 1] = { kind = "step", dir = "down" }; y = y + 1 end
         while y > 8 do actions[#actions + 1] = { kind = "step", dir = "up" }; y = y - 1 end
