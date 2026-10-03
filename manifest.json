@@ -6,7 +6,7 @@
   "entry": "main.lua",
   "profile": "content",
   "category": "OTHER",
-  "games": ["gen3"],
+  "games": ["firered", "leafgreen"],
   "game_version": ">=0.3.14",
   "priority": 275,
   "permissions": ["engine_internals"],
