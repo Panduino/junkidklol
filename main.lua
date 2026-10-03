@@ -323,36 +323,25 @@ return function(mod)
     end
   end
 
-  -- Request the host's late whole-window output seam only for our custom
-  -- grass battle. This runs after the normal compositor, so Kanto Gear still
-  -- gets its render.compose callback and second-screen battle UI.
+  -- Compose the custom battle directly at the same seam Kanto Gear uses.
+  -- This wrapper runs inside Kanto Gear's downstream call (Gear priority is
+  -- -1000), so Gear still refreshes/submits its lower-screen UI afterwards.
   if mod.hooks and mod.hooks.wrap then
-    local function customGrassActive()
+    mod.hooks:wrap("render.compose", function(next, renderer, ctx)
       local okBattle, Battle = pcall(require, "src.core.game3.battle")
-      return okBattle and Battle and Battle.isActive and Battle.isActive()
-        and okBg and BattleBg and BattleBg.sheetKey
+      local active = okBattle and Battle and Battle.isActive and Battle.isActive()
+      local grass = active and okBg and BattleBg and BattleBg.sheetKey
         and BattleBg.sheetKey() == "grass"
-        and loadCustomGrass() ~= nil
-    end
-
-    mod.hooks:wrap("render.output_enabled", function(next)
-      if customGrassActive() then return true end
-      return next()
-    end)
-
-    mod.hooks:wrap("render.output", function(next, ctx)
-      if not customGrassActive() or not ctx or not ctx.canvas then
-        return next(ctx)
+      local img = grass and loadCustomGrass() or nil
+      if not (img and ctx and ctx.uiCanvas) then
+        return next(renderer, ctx)
       end
-      local img = loadCustomGrass()
-      if not img then return next(ctx) end
-      local ww = tonumber(ctx.width) or love.graphics.getWidth()
-      local wh = tonumber(ctx.height) or love.graphics.getHeight()
-      local iw, ih = img:getDimensions()
 
-      -- The normal frame already contains battlers/HUD on transparency where
-      -- BattleBg.draw suppressed the vanilla terrain. Draw our 16:9 art first,
-      -- then place that finished frame over it.
+      local ww = tonumber(ctx.ww) or love.graphics.getWidth()
+      local wh = tonumber(ctx.wh) or love.graphics.getHeight()
+      local iw, ih = img:getDimensions()
+      local cw, ch = ctx.uiCanvas:getDimensions()
+
       love.graphics.push("all")
       love.graphics.origin()
       love.graphics.setScissor()
@@ -360,10 +349,15 @@ return function(mod)
       love.graphics.clear(0, 0, 0, 1)
       love.graphics.setColor(1, 1, 1, 1)
       love.graphics.draw(img, 0, 0, 0, ww / iw, wh / ih)
-      love.graphics.draw(ctx.canvas, 0, 0)
+
+      -- BattleBg.draw made the terrain layer transparent. Overlay the native
+      -- battle scene/HUD; Kanto Gear's visibility hooks have already removed
+      -- the upper-screen pieces it owns on the lower display.
+      ctx.uiCanvas:setFilter("nearest", "nearest")
+      love.graphics.draw(ctx.uiCanvas, 0, 0, 0, ww / cw, wh / ch)
       love.graphics.pop()
       return true
-    end)
+    end, 0)
   end
 
   -- Drop only the player's native singles healthbox below the opposing
@@ -371,10 +365,10 @@ return function(mod)
   -- the 240px Gen3 HUD canvas.
   local okHealthbox, Healthbox = pcall(require, "src.core.game3.battle.healthbox")
   if okHealthbox and Healthbox then
-    Healthbox.PLAYER_CENTER.y = 100
+    Healthbox.PLAYER_CENTER.y = 108
     if Healthbox.CENTERS and Healthbox.CENTERS[false]
         and Healthbox.CENTERS[false][0] then
-      Healthbox.CENTERS[false][0].y = 100
+      Healthbox.CENTERS[false][0].y = 108
     end
   end
 
