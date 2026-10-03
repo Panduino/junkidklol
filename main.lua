@@ -235,7 +235,9 @@ return function(mod)
     -- lowered individually instead of moving every enemy by the same amount.
     imageMeta[img] = {
       ox = back and -20 or 0,
-      oy = (not back and metric and tonumber(metric.fy)) or 0,
+      -- DBK metrics are authored for G9's own scene.  Gen 3 already supplies
+      -- the base battler Y, so use only half of the species correction here.
+      oy = (not back and metric and math.floor(((tonumber(metric.fy) or 0) * 0.5) + 0.5)) or 0,
     }
     return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
   end
@@ -264,10 +266,10 @@ return function(mod)
       love.graphics.draw = function(drawable, x, y, r, sx, sy, ox, oy, ...)
         local meta = imageMeta[drawable]
         if meta then
-          local iw, ih = drawable:getDimensions()
           x = (x or 0) + (meta.ox or 0)
           y = (y or 0) + (meta.oy or 0)
-          ox, oy = iw / 2, ih / 2
+          -- Keep Gen 3's native 32,32 sampling/origin.  Replacing this with
+          -- the trimmed image centre made front sprites look resampled/soft.
         end
         return realDraw(drawable, x, y, r, sx, sy, ox, oy, ...)
       end
