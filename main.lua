@@ -407,15 +407,15 @@ return function(mod)
           x = (x or 0) + (meta.ox or 0)
           y = (y or 0) + (meta.oy or 0)
           if meta.g9Back then
-            -- Keep the native-resolution cached frame and the proven back
-            -- centre anchor. Present it at an integer 2x scale so every G9
-            -- source pixel remains a clean 2x2 block instead of being
-            -- fractionally resampled.
+            -- Keep the cached G9 back frame at native resolution and use
+            -- nearest-neighbour filtering for the established 1.5x battle
+            -- presentation. Nothing is resized or downsampled in the cache.
             local iw, ih = drawable:getDimensions()
+            if drawable.setFilter then drawable:setFilter("nearest", "nearest") end
             local baseSx = sx or 1
             local baseSy = sy or baseSx
-            sx = baseSx * 2
-            sy = baseSy * 2
+            sx = baseSx * 1.5
+            sy = baseSy * 1.5
             ox = iw * 0.5
             oy = ih * 0.5
           else
