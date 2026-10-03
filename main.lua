@@ -170,8 +170,10 @@ return function(mod)
     local maxH = back and 104 or 88
     -- Back sprites sit much closer to the camera in G9. Allow small backs to
     -- grow instead of permanently capping every trimmed sheet at 1:1.
-    local naturalScale = back and 1.5 or 1
+    local naturalScale = 1
+    local targetScale = back and 1.5 or 1
     local scale = math.min(naturalScale, maxW / cw, maxH / ch)
+    local drawScale = math.min(targetScale, maxW / cw, maxH / ch)
     local dw = math.max(1, math.floor(cw * scale + 0.5))
     local dh = math.max(1, math.floor(ch * scale + 0.5))
     local frames = {}
@@ -194,6 +196,7 @@ return function(mod)
       frames[#frames + 1] = canvas
     end
 
+    frames._g9DrawScale = drawScale
     return frames
   end
 
@@ -237,6 +240,7 @@ return function(mod)
     -- own per-species FrontSprite Y metric, so short/low-bodied species are
     -- lowered individually instead of moving every enemy by the same amount.
     imageMeta[img] = {
+      drawScale = back and (frames._g9DrawScale or 1) or 1,
       -- Keep the scene correction, but also respect G9's authored back
       -- placement instead of centering every species identically.
       ox = back
@@ -285,8 +289,12 @@ return function(mod)
         if meta then
           x = (x or 0) + (meta.ox or 0)
           y = (y or 0) + (meta.oy or 0)
-          -- Keep Gen 3's native 32,32 sampling/origin.  Replacing this with
-          -- the trimmed image centre made front sprites look resampled/soft.
+          if meta.drawScale and meta.drawScale ~= 1 then
+            sx = (sx or 1) * meta.drawScale
+            sy = (sy or sx or 1) * meta.drawScale
+          end
+          -- Keep Gen 3's native 32,32 sampling/origin. Back sprites now stay
+          -- native-resolution in the cache and are enlarged only at draw time.
         end
         return realDraw(drawable, x, y, r, sx, sy, ox, oy, ...)
       end
