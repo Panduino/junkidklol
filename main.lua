@@ -312,17 +312,51 @@ return function(mod)
       local img = loadCustomGrass()
       if not img then return originalBgDraw(id, enemyOx, playerOx, bgOx) end
 
-      -- Draw the authored 240x135 scene directly into Gen3's native
-      -- 240x160 battle canvas. Do not own render.compose: the host must retain
-      -- its normal scaling and Kanto Gear must retain its compositor.
+      -- Leave the native terrain/platform layer transparent. The authored
+      -- 240x135 background is composited at window size after Kanto Gear has
+      -- applied its Gen3 UI-visibility wrappers.
+      love.graphics.clear(0, 0, 0, 0)
+      love.graphics.setColor(1, 1, 1, 1)
+      return true
+    end
+  end
+
+  -- Fullscreen 16:9 battle presentation. Kanto Gear's compose wrapper uses
+  -- priority -1000, so run farther downstream: Gear calls us via next(), then
+  -- resumes and submits its companion display after this returns.
+  if mod.hooks and mod.hooks.wrap then
+    mod.hooks:wrap("render.compose", function(next, renderer, ctx)
+      local okBattle, Battle = pcall(require, "src.core.game3.battle")
+      local active = okBattle and Battle and Battle.isActive and Battle.isActive()
+      local grass = active and okBg and BattleBg and BattleBg.sheetKey
+        and BattleBg.sheetKey() == "grass"
+      local img = grass and loadCustomGrass() or nil
+      if not (img and ctx and ctx.uiCanvas) then
+        return next(renderer, ctx)
+      end
+
+      local ww = tonumber(ctx.ww) or love.graphics.getWidth()
+      local wh = tonumber(ctx.wh) or love.graphics.getHeight()
+      local iw, ih = img:getDimensions()
+      local cw, ch = ctx.uiCanvas:getDimensions()
+      local sceneH = math.min(135, ch)
+      local quad = love.graphics.newQuad(0, 0, math.min(240, cw), sceneH, cw, ch)
+
+      love.graphics.push("all")
+      love.graphics.origin()
+      love.graphics.setScissor()
+      love.graphics.setBlendMode("alpha")
       love.graphics.clear(0, 0, 0, 1)
       love.graphics.setColor(1, 1, 1, 1)
       img:setFilter("nearest", "nearest")
-      love.graphics.draw(img, 0, 0)
-
-      -- Platforms are baked into backgrounds/grass.png.
+      ctx.uiCanvas:setFilter("nearest", "nearest")
+      love.graphics.draw(img, 0, 0, 0, ww / iw, wh / ih)
+      love.graphics.draw(ctx.uiCanvas, quad, 0, 0, 0,
+        ww / math.min(240, cw), wh / sceneH)
+      love.graphics.pop()
+      quad:release()
       return true
-    end
+    end, -2000)
   end
 
   -- Drop only the player's native singles healthbox below the opposing
