@@ -991,9 +991,8 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
         Message.show("{PLAYER} received the "..name.."!", nextStep)
       end
 
-      mysticTicketBusy, auroraTicketBusy = true, true
-      engine.Field.locked = true
-      if giveMystic and giveAurora then
+      local function startTicketDialogue()
+        if giveMystic and giveAurora then
         Message.show("Oh! Perfect timing!", function()
           Message.show("Two unusual tickets arrived for you.", function()
             Message.show("They both look like they're for the SEAGALLOP ferry.", function()
@@ -1023,6 +1022,36 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
           end)
         end)
       end
+      end
+
+      local function celioApproach(nextStep)
+        local celio, celioId
+        for _, lid in ipairs(Objects._order or {}) do
+          local eo = Objects._byId and Objects._byId[lid]
+          if eo and tonumber(eo.graphicsId) == 89 then
+            celio, celioId = eo, lid
+            break
+          end
+        end
+        if not celio or not celioId then
+          nextStep()
+          return
+        end
+
+        local x = tonumber(celio.x or (celio.def and celio.def.x)) or 15
+        local y = tonumber(celio.y or (celio.def and celio.def.y)) or 6
+        local actions = {}
+        while y < 8 do actions[#actions + 1] = { kind = "step", dir = "down" }; y = y + 1 end
+        while y > 8 do actions[#actions + 1] = { kind = "step", dir = "up" }; y = y - 1 end
+        while x > 10 do actions[#actions + 1] = { kind = "step", dir = "left" }; x = x - 1 end
+        while x < 10 do actions[#actions + 1] = { kind = "step", dir = "right" }; x = x + 1 end
+        actions[#actions + 1] = { kind = "turn", dir = "left" }
+        Objects.startTrack(celioId, actions, nextStep)
+      end
+
+      mysticTicketBusy, auroraTicketBusy = true, true
+      engine.Field.locked = true
+      celioApproach(startTicketDialogue)
       return true
     end
 
