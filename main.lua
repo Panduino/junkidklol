@@ -314,122 +314,6 @@ return function(mod)
     return extraAssignments
   end
 
-  -- Feed this mod's runtime encounter tables into FireRed's Pokédex AREA page.
-  -- The stock query layer only indexes encounters extracted from the ROM, so
-  -- dynamically generated RTC encounters otherwise have no map locations.
-  do
-    local okPD, PokedexData = pcall(require, "src.core.game3.pokedex_data")
-    if okPD and type(PokedexData) == "table"
-        and type(PokedexData.getWildAreasForSpecies) == "function"
-        and not PokedexData.__rtcEncounterAreas then
-      local rawWildAreas = PokedexData.getWildAreasForSpecies
-      local areaBySpecies = nil
-
-      local function dexAreaForMap(id)
-        local route = tostring(id):match("^FR_ROUTE_(%d+)$")
-        if route then return "DEX_AREA_ROUTE_" .. route end
-        local fixed = {
-          FR_VIRIDIAN_FOREST = "DEX_AREA_VIRIDIAN_FOREST",
-          FR_PATTERN_BUSH = "DEX_AREA_PATTERN_BUSH",
-          FR_DIGLETTS_CAVE = "DEX_AREA_DIGLETTS_CAVE",
-          FR_MT_MOON_1F = "DEX_AREA_MT_MOON",
-          FR_MT_MOON_B1F = "DEX_AREA_MT_MOON",
-          FR_MT_MOON_B2F = "DEX_AREA_MT_MOON",
-          FR_ROCK_TUNNEL_1F = "DEX_AREA_ROCK_TUNNEL",
-          FR_ROCK_TUNNEL_B1F = "DEX_AREA_ROCK_TUNNEL",
-          FR_POWER_PLANT = "DEX_AREA_POWER_PLANT",
-          FR_POKEMON_TOWER_3F = "DEX_AREA_POKEMON_TOWER",
-          FR_POKEMON_TOWER_4F = "DEX_AREA_POKEMON_TOWER",
-          FR_POKEMON_TOWER_5F = "DEX_AREA_POKEMON_TOWER",
-          FR_POKEMON_TOWER_6F = "DEX_AREA_POKEMON_TOWER",
-          FR_POKEMON_TOWER_7F = "DEX_AREA_POKEMON_TOWER",
-          FR_SEAFOAM_ISLANDS_1F = "DEX_AREA_SEAFOAM_ISLANDS",
-          FR_SEAFOAM_ISLANDS_B1F = "DEX_AREA_SEAFOAM_ISLANDS",
-          FR_SEAFOAM_ISLANDS_B2F = "DEX_AREA_SEAFOAM_ISLANDS",
-          FR_SEAFOAM_ISLANDS_B3F = "DEX_AREA_SEAFOAM_ISLANDS",
-          FR_SEAFOAM_ISLANDS_B4F = "DEX_AREA_SEAFOAM_ISLANDS",
-          FR_POKEMON_MANSION_1F = "DEX_AREA_POKEMON_MANSION",
-          FR_POKEMON_MANSION_B1F = "DEX_AREA_POKEMON_MANSION",
-          FR_POKEMON_MANSION_B2F = "DEX_AREA_POKEMON_MANSION",
-          FR_POKEMON_MANSION_B3F = "DEX_AREA_POKEMON_MANSION",
-          FR_CERULEAN_CAVE_1F = "DEX_AREA_CERULEAN_CAVE",
-          FR_CERULEAN_CAVE_B1F = "DEX_AREA_CERULEAN_CAVE",
-          FR_CERULEAN_CAVE_B2F = "DEX_AREA_CERULEAN_CAVE",
-          FR_VICTORY_ROAD_1F = "DEX_AREA_VICTORY_ROAD",
-          FR_VICTORY_ROAD_2F = "DEX_AREA_VICTORY_ROAD",
-          FR_VICTORY_ROAD_3F = "DEX_AREA_VICTORY_ROAD",
-          FR_SAFARI_ZONE_CENTER = "DEX_AREA_SAFARI_ZONE",
-          FR_SAFARI_ZONE_EAST = "DEX_AREA_SAFARI_ZONE",
-          FR_SAFARI_ZONE_NORTH = "DEX_AREA_SAFARI_ZONE",
-          FR_SAFARI_ZONE_WEST = "DEX_AREA_SAFARI_ZONE",
-        }
-        return fixed[id]
-      end
-
-      local function addArea(index, nat, id)
-        nat = tonumber(nat)
-        if not nat or isExcludedWildSpecies(nat) then return end
-        local sp = Pokemon.speciesFromNational(nat) or (nat <= 251 and nat or nil)
-        local area = dexAreaForMap(id)
-        if not sp or not area then return end
-        index[sp] = index[sp] or {}
-        for _, existing in ipairs(index[sp]) do
-          if existing == area then return end
-        end
-        index[sp][#index[sp] + 1] = area
-      end
-
-      local function buildAreaIndex()
-        local index = {}
-        local generated = buildExtraAssignments(Pokemon)
-        for _, profile in ipairs(PROFILES) do
-          for _, period in ipairs(PERIODS) do
-            for _, nat in ipairs(profile.base[period] or {}) do
-              addArea(index, nat, profile.id)
-            end
-            local commons = REGIONAL_COMMONS[profile.id]
-            for _, nat in ipairs(commons and commons[period] or {}) do
-              addArea(index, nat, profile.id)
-            end
-            local extras = generated[profile.id]
-            for _, nat in ipairs(extras and extras[period] or {}) do
-              addArea(index, nat, profile.id)
-            end
-          end
-        end
-        for id, water in pairs(WATER_TABLES) do
-          for _, nat in ipairs(water.surf or {}) do addArea(index, nat, id) end
-          for _, nat in ipairs(water.fishing or {}) do addArea(index, nat, id) end
-        end
-        for id, additions in pairs(WATER_ADDITIONS) do
-          for _, nat in ipairs(additions) do addArea(index, nat, id) end
-        end
-        for id, periods in pairs(WATER_PERIOD_ADDITIONS) do
-          for _, period in ipairs(PERIODS) do
-            for _, nat in ipairs(periods[period] or {}) do addArea(index, nat, id) end
-          end
-        end
-        return index
-      end
-
-      PokedexData.getWildAreasForSpecies = function(speciesId)
-        if not areaBySpecies then areaBySpecies = buildAreaIndex() end
-        local custom = areaBySpecies[tonumber(speciesId) or -1]
-        local base = rawWildAreas(speciesId) or {}
-        if not custom or #custom == 0 then return base end
-        local out, seen = {}, {}
-        for _, area in ipairs(base) do
-          if not seen[area] then seen[area] = true; out[#out + 1] = area end
-        end
-        for _, area in ipairs(custom) do
-          if not seen[area] then seen[area] = true; out[#out + 1] = area end
-        end
-        return out
-      end
-      PokedexData.__rtcEncounterAreas = true
-    end
-  end
-
   local cache = {}
 
   local function entry(nat, minLevel, maxLevel)
@@ -549,6 +433,85 @@ return function(mod)
     return result
   end
 
+  local function installPokedexEncounterAreas(Pokemon)
+    local okPD, PokedexData = pcall(require, "src.core.game3.pokedex_data")
+    if not okPD or type(PokedexData) ~= "table"
+        or type(PokedexData.getWildAreasForSpecies) ~= "function"
+        or PokedexData.__rtcEncounterAreas then
+      return
+    end
+
+    local rawWildAreas = PokedexData.getWildAreasForSpecies
+    local areaBySpecies = {}
+
+    local function areaKey(id)
+      local route = tostring(id):match("^FR_ROUTE_(%d+)$")
+      if route then return "DEX_AREA_ROUTE_" .. route end
+      local fixed = {
+        FR_VIRIDIAN_FOREST="DEX_AREA_VIRIDIAN_FOREST",
+        FR_PATTERN_BUSH="DEX_AREA_PATTERN_BUSH",
+        FR_DIGLETTS_CAVE="DEX_AREA_DIGLETTS_CAVE",
+        FR_MT_MOON_1F="DEX_AREA_MT_MOON", FR_MT_MOON_B1F="DEX_AREA_MT_MOON", FR_MT_MOON_B2F="DEX_AREA_MT_MOON",
+        FR_ROCK_TUNNEL_1F="DEX_AREA_ROCK_TUNNEL", FR_ROCK_TUNNEL_B1F="DEX_AREA_ROCK_TUNNEL",
+        FR_POWER_PLANT="DEX_AREA_POWER_PLANT",
+        FR_POKEMON_TOWER_1F="DEX_AREA_POKEMON_TOWER", FR_POKEMON_TOWER_2F="DEX_AREA_POKEMON_TOWER",
+        FR_POKEMON_TOWER_3F="DEX_AREA_POKEMON_TOWER", FR_POKEMON_TOWER_4F="DEX_AREA_POKEMON_TOWER",
+        FR_POKEMON_TOWER_5F="DEX_AREA_POKEMON_TOWER", FR_POKEMON_TOWER_6F="DEX_AREA_POKEMON_TOWER",
+        FR_POKEMON_TOWER_7F="DEX_AREA_POKEMON_TOWER",
+        FR_SEAFOAM_ISLANDS_1F="DEX_AREA_SEAFOAM_ISLANDS", FR_SEAFOAM_ISLANDS_B1F="DEX_AREA_SEAFOAM_ISLANDS",
+        FR_SEAFOAM_ISLANDS_B2F="DEX_AREA_SEAFOAM_ISLANDS", FR_SEAFOAM_ISLANDS_B3F="DEX_AREA_SEAFOAM_ISLANDS",
+        FR_SEAFOAM_ISLANDS_B4F="DEX_AREA_SEAFOAM_ISLANDS",
+        FR_POKEMON_MANSION_1F="DEX_AREA_POKEMON_MANSION", FR_POKEMON_MANSION_B1F="DEX_AREA_POKEMON_MANSION",
+        FR_POKEMON_MANSION_B2F="DEX_AREA_POKEMON_MANSION", FR_POKEMON_MANSION_B3F="DEX_AREA_POKEMON_MANSION",
+        FR_CERULEAN_CAVE_1F="DEX_AREA_CERULEAN_CAVE", FR_CERULEAN_CAVE_B1F="DEX_AREA_CERULEAN_CAVE",
+        FR_CERULEAN_CAVE_B2F="DEX_AREA_CERULEAN_CAVE",
+        FR_VICTORY_ROAD_1F="DEX_AREA_VICTORY_ROAD", FR_VICTORY_ROAD_2F="DEX_AREA_VICTORY_ROAD",
+        FR_VICTORY_ROAD_3F="DEX_AREA_VICTORY_ROAD",
+        FR_SAFARI_ZONE_CENTER="DEX_AREA_SAFARI_ZONE", FR_SAFARI_ZONE_EAST="DEX_AREA_SAFARI_ZONE",
+        FR_SAFARI_ZONE_NORTH="DEX_AREA_SAFARI_ZONE", FR_SAFARI_ZONE_WEST="DEX_AREA_SAFARI_ZONE",
+      }
+      return fixed[id]
+    end
+
+    local function addSpeciesArea(species, area)
+      species = tonumber(species)
+      if not species or not area or not PokedexData.getAreaMarker(area) then return end
+      areaBySpecies[species] = areaBySpecies[species] or {}
+      for _, old in ipairs(areaBySpecies[species]) do if old == area then return end end
+      areaBySpecies[species][#areaBySpecies[species] + 1] = area
+    end
+
+    -- Index the exact tables the encounter engine serves, for every RTC period.
+    for _, profile in ipairs(PROFILES) do
+      local area = areaKey(profile.id)
+      if area then
+        for _, period in ipairs(PERIODS) do
+          local t = buildTable(profile, period, Pokemon)
+          for _, kind in ipairs({"land","water","fishing"}) do
+            local slots = t[kind] and t[kind].slots or {}
+            for _, slot in ipairs(slots) do addSpeciesArea(slot.species, area) end
+          end
+        end
+      end
+    end
+
+    PokedexData.getWildAreasForSpecies = function(speciesId)
+      local sp = tonumber(speciesId)
+      local base = rawWildAreas(speciesId) or {}
+      local custom = sp and areaBySpecies[sp] or nil
+      if not custom then return base end
+      local out, seen = {}, {}
+      for _, area in ipairs(base) do
+        if not seen[area] then seen[area] = true; out[#out + 1] = area end
+      end
+      for _, area in ipairs(custom) do
+        if not seen[area] then seen[area] = true; out[#out + 1] = area end
+      end
+      return out
+    end
+    PokedexData.__rtcEncounterAreas = true
+  end
+
   local installed = false
   local lastPeriod = nil
 
@@ -575,6 +538,8 @@ return function(mod)
       mod.log:error("Untamed Advanced did not expose Pokemon.types")
       return false
     end
+
+    installPokedexEncounterAreas(Pokemon)
 
     -- Replace every Gen 1-4 trade / held-item trade evolution with a normal
     -- level-up evolution so the full dex remains obtainable in single-player.
