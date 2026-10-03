@@ -896,48 +896,6 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
         end
 
 
-        local Multichoice = require("src.core.game3.scripting.multichoice")
-        local oldVermilionOverride = Multichoice.OVERRIDES[61]
-        Multichoice.OVERRIDES[61] = function(ctx, row, done)
-          local origin = tonumber(FlagsSea.getVar(SpaceSea.store, ctx, 0x8004)) or 0
-          if origin ~= 9 and origin ~= 10 then
-            if oldVermilionOverride then return oldVermilionOverride(ctx, row, done) end
-            return false
-          end
-
-          local labels = {"VERMILION", "ONE ISLAND", "TWO ISLAND", "THREE ISLAND",
-            "FOUR ISLAND", "FIVE ISLAND", "SIX ISLAND", "SEVEN ISLAND"}
-          local dests = {0, 1, 2, 3, 4, 5, 6, 7}
-          if origin ~= 9 and hasMysticTicket() then
-            labels[#labels + 1], dests[#dests + 1] = "NAVEL ROCK", 9
-          end
-          if origin ~= 10 and hasAuroraTicket() then
-            labels[#labels + 1], dests[#dests + 1] = "BIRTH ISLAND", 10
-          end
-          labels[#labels + 1], dests[#dests + 1] = "EXIT", 127
-
-          local Adapters = require("src.core.game3.scripting.adapters")
-          local adapters = Adapters.host(mod)
-          local menuId = 0xF002
-          Multichoice.LISTS[menuId] = { labels = labels, count = #labels }
-          adapters.multichoice({
-            op = "multichoice",
-            [1] = 17, [2] = 2, [3] = menuId, [4] = 0,
-            count = #labels,
-          }, function(sel)
-            local dest = dests[(tonumber(sel) or (#dests - 1)) + 1] or 127
-            if dest == 127 then
-              done(1)
-              return
-            end
-            FlagsSea.setVar(SpaceSea.store, ctx, 0x8006, dest)
-            -- The stock event-island script only has two switch cases:
-            -- result 0 sails to Vermilion. Keep that branch, but redirect
-            -- its destination variable before the native sail script runs.
-            done(0)
-          end)
-          return true
-        end
       end
     end
 
