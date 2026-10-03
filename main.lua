@@ -173,10 +173,11 @@ return function(mod)
     local naturalScale = 1
     local targetScale = back and 1.5 or 1
     local fitScale = math.min(naturalScale, maxW / cw, maxH / ch)
-    -- Enemy/front art is always native-resolution. Do not fit it to FireRed's
-    -- stock picture box: one source pixel remains one battle-canvas pixel.
-    -- Backs retain the established fit/1.5x behavior.
-    local scale = back and fitScale or 1
+    -- Front path restored to the known-good e44e927 behavior. It bakes the
+    -- trimmed G9 frame using the original fit calculation, but never applies
+    -- a second draw-time scale to fronts. Backs keep their later proven-good
+    -- presentation behavior.
+    local scale = fitScale
     local drawScale = back
       and math.min(targetScale, maxW / cw, maxH / ch)
       or 1
@@ -245,13 +246,13 @@ return function(mod)
     -- own per-species FrontSprite Y metric, so short/low-bodied species are
     -- lowered individually instead of moving every enemy by the same amount.
     imageMeta[img] = {
-      drawScale = frames._g9DrawScale or 1,
+      drawScale = back and (frames._g9DrawScale or 1) or 1,
       g9Back = back,
       -- Keep the scene correction, but also respect G9's authored back
       -- placement instead of centering every species identically.
       ox = back
         and (-22 + math.floor(((metric and tonumber(metric.bx)) or 0) * 0.5 + 0.5))
-        or (2 + math.floor(((metric and tonumber(metric.fx)) or 0) * 0.5 + 0.5)),
+        or 2,
       -- Natural G9 fronts are grounded by their trimmed bottom edge, then use
       -- G9's per-species front Y metric. FireRed's centre-origin draw needs the
       -- equivalent correction based on this frame's actual height.
@@ -268,7 +269,13 @@ return function(mod)
           local normalBy = math.min(by, 15)
           return -6 + math.floor(normalBy * 0.5 + 0.5)
         end)()
-        or (0 + math.floor(((metric and tonumber(metric.fy)) or 0) * 0.5 + 0.5)),
+        or (function()
+          -- Known-good e44e927 front placement: ground the trimmed image on
+          -- the authored enemy contact point and apply G9's front-Y metric.
+          local fy = (metric and tonumber(metric.fy)) or 0
+          local base = 32 - (h / 2) + 17
+          return math.floor(base - (6 - fy) * 2 + 0.5)
+        end)(),
     }
     return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
   end
@@ -388,30 +395,18 @@ return function(mod)
         if meta then
           x = (x or 0) + (meta.ox or 0)
           y = (y or 0) + (meta.oy or 0)
-          local baseSx = sx or 1
-          local baseSy = sy or baseSx
-          local ds = meta.drawScale or 1
-          -- G9 frames are union-trimmed canvases, not FireRed's fixed 64x64
-          -- pictures. Backs keep the established FireRed transform because
-          -- their placement/scale is already correct. Fronts must NOT inherit
-          -- FireRed's per-picture scale: the G9 image itself is already the
-          -- authored native-size battler.
           if meta.g9Back then
+            local baseSx = sx or 1
+            local baseSy = sy or baseSx
+            local ds = meta.drawScale or 1
             sx = baseSx * ds
             sy = baseSy * ds
             local iw, ih = drawable:getDimensions()
             ox = iw * 0.5
             oy = ih * 0.5
           else
-            local iw, ih = drawable:getDimensions()
-            local nativeOx = tonumber(ox) or 32
-            local nativeOy = tonumber(oy) or 32
-            -- First preserve the same visual anchor using the transform that
-            -- FireRed supplied, then discard that transform for the G9 draw.
-            x = (x or 0) + (nativeOx - iw * 0.5) * baseSx
-            y = (y or 0) + (nativeOy - ih * 0.5) * baseSy
-            sx, sy = 1, 1
-            ox, oy = 0, 0
+            -- Exact e44e927 front draw behavior: only apply our scene offset.
+            -- Leave FireRed's supplied scale and native 32,32 origin untouched.
           end
         end
         return realDraw(drawable, x, y, r, sx, sy, ox, oy, ...)
