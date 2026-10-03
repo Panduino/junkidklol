@@ -322,52 +322,47 @@ return function(mod)
     end
   end
 
-  -- Gen3 owns a fixed 240x160 UI canvas. Draw the 16:9 art underneath it,
-  -- but always continue the render.compose chain so layout/second-screen mods
-  -- such as Kanto Gear still receive the frame and can hide/mirror battle UI.
+  -- Request the host's late whole-window output seam only for our custom
+  -- grass battle. This runs after the normal compositor, so Kanto Gear still
+  -- gets its render.compose callback and second-screen battle UI.
   if mod.hooks and mod.hooks.wrap then
-    mod.hooks:wrap("render.compose", function(next, renderer, ctx)
+    local function customGrassActive()
       local okBattle, Battle = pcall(require, "src.core.game3.battle")
-      local active = okBattle and Battle and Battle.isActive and Battle.isActive()
-      local img = active and loadCustomGrass() or nil
-      local grass = okBg and BattleBg and BattleBg.sheetKey and BattleBg.sheetKey() == "grass"
-      if not (active and grass and img and ctx and ctx.uiCanvas) then
-        return next(renderer, ctx)
-      end
+      return okBattle and Battle and Battle.isActive and Battle.isActive()
+        and okBg and BattleBg and BattleBg.sheetKey
+        and BattleBg.sheetKey() == "grass"
+        and loadCustomGrass() ~= nil
+    end
 
-      local ww = tonumber(ctx.ww) or love.graphics.getWidth()
-      local wh = tonumber(ctx.wh) or love.graphics.getHeight()
+    mod.hooks:wrap("render.output_enabled", function(next)
+      if customGrassActive() then return true end
+      return next()
+    end)
+
+    mod.hooks:wrap("render.output", function(next, ctx)
+      if not customGrassActive() or not ctx or not ctx.canvas then
+        return next(ctx)
+      end
+      local img = loadCustomGrass()
+      if not img then return next(ctx) end
+      local ww = tonumber(ctx.width) or love.graphics.getWidth()
+      local wh = tonumber(ctx.height) or love.graphics.getHeight()
       local iw, ih = img:getDimensions()
 
-      -- Paint the authored 16:9 backdrop first. BattleBg.draw has already
-      -- cleared the vanilla terrain/platform layer to transparent, so the
-      -- normal Gen3/Kanto Gear composition can be laid over this image.
+      -- The normal frame already contains battlers/HUD on transparency where
+      -- BattleBg.draw suppressed the vanilla terrain. Draw our 16:9 art first,
+      -- then place that finished frame over it.
       love.graphics.push("all")
       love.graphics.origin()
       love.graphics.setScissor()
       love.graphics.setBlendMode("alpha")
+      love.graphics.clear(0, 0, 0, 1)
       love.graphics.setColor(1, 1, 1, 1)
       love.graphics.draw(img, 0, 0, 0, ww / iw, wh / ih)
+      love.graphics.draw(ctx.canvas, 0, 0)
       love.graphics.pop()
-
-      -- Never terminate the compose chain here. Kanto Gear's wrapper needs to
-      -- run to suppress upper-screen battle UI and update the lower display.
-      return next(renderer, ctx)
+      return true
     end)
-  end
-
-  -- Keep the player's native healthbox on the right side of the widened
-  -- battle composition. This only affects the upper/native Gen3 HUD; Kanto
-  -- Gear's lower-screen battle UI is independent.
-  local okHealthbox, Healthbox = pcall(require, "src.core.game3.battle.healthbox")
-  if okHealthbox and Healthbox then
-    -- A singles player box is 96 px wide from its left-half center. Moving
-    -- the center from 158 to 184 keeps it right-aligned in the 240 px space.
-    Healthbox.PLAYER_CENTER.x = 184
-    if Healthbox.CENTERS and Healthbox.CENTERS[false]
-        and Healthbox.CENTERS[false][0] then
-      Healthbox.CENTERS[false][0].x = 184
-    end
   end
 
   -- Gen 3's stock battle renderer hard-codes a 32,32 origin because vanilla
