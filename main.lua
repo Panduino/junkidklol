@@ -740,6 +740,53 @@ return function(mod)
     end
 
     local rawFieldInteract = Field.interact
+
+    local function showVermilionHarborChoice(game, onSeagallop)
+      local Choice = require("src.ui.game3.choice")
+      Field.lock("vermillion_harbor_choice")
+      Message.show("Where would you like to go?", function()
+        Choice.multi({ "SEAGALLOP FERRY", "OLD S.S. ANNE DOCK", "EXIT" }, 0, function(pick)
+          if pick == 0 then
+            Field.unlock("vermillion_harbor_choice")
+            onSeagallop()
+          elseif pick == 1 then
+            mod.world:warpTo("FR_SSANNE_EXTERIOR", 31, 6, "down")
+            Field.unlock("vermillion_harbor_choice")
+          else
+            Field.unlock("vermillion_harbor_choice")
+          end
+        end, { left = 10, top = 5 })
+      end)
+      return true
+    end
+
+    local rawTryCoordEvents = Field.tryCoordEvents
+    if not Field._oldDockCoordChoiceInstalled then
+      local passingToSeagallop = false
+      Field.tryCoordEvents = function(game, cx, cy)
+        if not passingToSeagallop then
+          local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+          if session and session.map == "FR_VERMILION_CITY"
+              and (cx == 22 or cx == 23) and cy == 33 then
+            local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
+            local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
+            local ctx = okSpace and Space and Space.vm and Space.vm.ctx or nil
+            local scene = okSpace and okFlags and Space and Flags and Space.store
+              and Flags.getVar(Space.store, ctx, 0x407E) or nil
+            if scene == 3 then
+              return showVermilionHarborChoice(game, function()
+                passingToSeagallop = true
+                rawTryCoordEvents(game, cx, cy)
+                passingToSeagallop = false
+              end)
+            end
+          end
+        end
+        return rawTryCoordEvents(game, cx, cy)
+      end
+      Field._oldDockCoordChoiceInstalled = true
+    end
+
     if not Field._fossilDealerInteractInstalled then
       Field.interact = function(game)
         local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
@@ -758,22 +805,9 @@ return function(mod)
             and liveVar(0x407E) == 3
             and Player.cellX == 24 and Player.cellY == 32 and Player.facing == "down"
             and not Field.isLocked() then
-          local Choice = require("src.ui.game3.choice")
-          Field.lock("vermillion_harbor_choice")
-          Message.show("Where would you like to go?", function()
-            Choice.multi({ "SEAGALLOP FERRY", "OLD S.S. ANNE DOCK", "EXIT" }, 0, function(pick)
-              if pick == 0 then
-                Field.unlock("vermillion_harbor_choice")
-                rawFieldInteract(game)
-              elseif pick == 1 then
-                mod.world:warpTo("FR_SSANNE_EXTERIOR", 31, 6, "down")
-                Field.unlock("vermillion_harbor_choice")
-              else
-                Field.unlock("vermillion_harbor_choice")
-              end
-            end, { left = 10, top = 5 })
+          return showVermilionHarborChoice(game, function()
+            rawFieldInteract(game)
           end)
-          return true
         end
 
         -- The truck is scenery on the eastern harbor strip. Its collision
