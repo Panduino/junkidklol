@@ -299,6 +299,8 @@ return function(mod)
   local customBackgrounds = {}
   local function loadCustomBackground(key)
     if not key or key == "" then return nil end
+    -- No custom mountain art: use the authored sand background instead.
+    if key == "mountain" then key = "sand" end
     if customBackgrounds[key] ~= nil then
       return customBackgrounds[key] or nil
     end
