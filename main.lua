@@ -1036,108 +1036,89 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       Flags.setVar(Space.store, ctx, VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 6)
     end
 
-    local function tryMysticTicketEvent()
+    local function tryTicketEvents()
       local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
       local mapId = session and session.map
       local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
       if okSpace and Space and Space.mapId then mapId = Space.mapId end
-      if not session or not oneIslandCenter(mapId) or mysticTicketBusy then return false end
+      if not session or not oneIslandCenter(mapId) or mysticTicketBusy or auroraTicketBusy then return false end
       local state = mysticTicketState(session)
-      if state.mysticTicketGiven or MysteryGift.getFlag(session, FLAG_RECEIVED_MYSTIC_TICKET) then
-        state.mysticTicketGiven = true
-        return false
-      end
-      if not hasLegendarySet(session) then return false end
+      local hasMystic = state.mysticTicketGiven or MysteryGift.getFlag(session, FLAG_RECEIVED_MYSTIC_TICKET)
+        or (session.bag and Bag.get(session.bag, MYSTIC_TICKET) > 0)
+      local hasAurora = state.auroraTicketGiven or MysteryGift.getFlag(session, FLAG_RECEIVED_AURORA_TICKET)
+        or (session.bag and Bag.get(session.bag, AURORA_TICKET) > 0)
+      if hasMystic then state.mysticTicketGiven = true end
+      if hasAurora then state.auroraTicketGiven = true end
+      local giveMystic = not hasMystic and hasLegendarySet(session)
+      local giveAurora = not hasAurora and hasRayquaza(session)
+      if not giveMystic and not giveAurora then return false end
 
-      local Message = require("src.ui.game3.message")
-      mysticTicketBusy = true
+      local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
+      local ctx = Space and Space.vm and Space.vm.ctx or nil
+      local function setTicketFlags(item)
+        local enableFlag, receivedFlag, shownFlag
+        if item == MYSTIC_TICKET then
+          enableFlag, receivedFlag, shownFlag = FLAG_ENABLE_SHIP_NAVEL_ROCK, FLAG_RECEIVED_MYSTIC_TICKET, FLAG_SHOWN_MYSTIC_TICKET
+          state.mysticTicketGiven = true
+        else
+          enableFlag, receivedFlag, shownFlag = FLAG_ENABLE_SHIP_BIRTH_ISLAND, FLAG_RECEIVED_AURORA_TICKET, FLAG_SHOWN_AURORA_TICKET
+          state.auroraTicketGiven = true
+        end
+        MysteryGift.setFlag(session, enableFlag, true)
+        MysteryGift.setFlag(session, receivedFlag, true)
+        if okFlags and Space and Space.store then
+          Flags.setFlag(Space.store, ctx, enableFlag, true)
+          Flags.setFlag(Space.store, ctx, receivedFlag, true)
+          Flags.setFlag(Space.store, ctx, shownFlag, false)
+          Flags.setVar(Space.store, ctx, VAR_MAP_SCENE_VERMILION_CITY, 3)
+          Flags.setVar(Space.store, ctx, VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 5)
+        end
+      end
+      local function unlock()
+        engine.Field.locked = false
+        mysticTicketBusy, auroraTicketBusy = false, false
+      end
+      local function giveTicket(item, name, nextStep)
+        if not Bag.add(session.bag, item, 1) then
+          Message.show("Your KEY ITEMS POCKET is full.", unlock)
+          return
+        end
+        setTicketFlags(item)
+        Message.show("{PLAYER} received the "..name.."!", nextStep)
+      end
+
+      mysticTicketBusy, auroraTicketBusy = true, true
       engine.Field.locked = true
-      Message.show("Oh! Perfect timing!", function()
-        Message.show("Something unusual arrived for you.", function()
-          Message.show("It looks like a ticket for the SEAGALLOP ferry.", function()
-            if not Bag.add(session.bag, MYSTIC_TICKET, 1) then
-              Message.show("Your KEY ITEMS POCKET is full.", function()
-                engine.Field.locked = false
-                mysticTicketBusy = false
-              end)
-              return
-            end
-            MysteryGift.setFlag(session, FLAG_ENABLE_SHIP_NAVEL_ROCK, true)
-            MysteryGift.setFlag(session, FLAG_RECEIVED_MYSTIC_TICKET, true)
-            local okSpace2, Space2 = pcall(require, "src.core.game3.scripting.space")
-            local okFlags2, Flags2 = pcall(require, "src.core.game3.scripting.flags")
-            if okSpace2 and okFlags2 and Space2 and Flags2 and Space2.store then
-              local ctx2 = Space2.vm and Space2.vm.ctx or nil
-              Flags2.setFlag(Space2.store, ctx2, FLAG_ENABLE_SHIP_NAVEL_ROCK, true)
-              Flags2.setFlag(Space2.store, ctx2, FLAG_RECEIVED_MYSTIC_TICKET, true)
-              Flags2.setFlag(Space2.store, ctx2, FLAG_SHOWN_MYSTIC_TICKET, false)
-              Flags2.setVar(Space2.store, ctx2, VAR_MAP_SCENE_VERMILION_CITY, 3)
-              Flags2.setVar(Space2.store, ctx2, VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 5)
-            end
-            state.mysticTicketGiven = true
-            Message.show("{PLAYER} received the MYSTICTICKET!", function()
-              Message.show("I've never seen a destination like this before...", function()
-                Message.show("You should ask the sailor about it.", function()
-                  engine.Field.locked = false
-                  mysticTicketBusy = false
+      if giveMystic and giveAurora then
+        Message.show("Oh! Perfect timing!", function()
+          Message.show("Two unusual tickets arrived for you.", function()
+            Message.show("They both look like they're for the SEAGALLOP ferry.", function()
+              giveTicket(MYSTIC_TICKET, "MYSTICTICKET", function()
+                giveTicket(AURORA_TICKET, "AURORATICKET", function()
+                  Message.show("I've never seen destinations like these before...", function()
+                    Message.show("You should ask the sailor about them.", unlock)
+                  end)
                 end)
               end)
             end)
           end)
         end)
-      end)
-      return true
-    end
-
-    local function tryAuroraTicketEvent()
-      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-      local mapId = session and session.map
-      local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
-      if okSpace and Space and Space.mapId then mapId = Space.mapId end
-      if not session or not oneIslandCenter(mapId) or auroraTicketBusy then return false end
-      local state = mysticTicketState(session)
-      if state.auroraTicketGiven or MysteryGift.getFlag(session, FLAG_RECEIVED_AURORA_TICKET) then
-        state.auroraTicketGiven = true
-        return false
-      end
-      if not hasRayquaza(session) then return false end
-
-      auroraTicketBusy = true
-      engine.Field.locked = true
-      Message.show("Oh! Perfect timing!", function()
-        Message.show("Another unusual ticket arrived for you.", function()
-          Message.show("It looks like it's for the SEAGALLOP ferry.", function()
-            if not Bag.add(session.bag, AURORA_TICKET, 1) then
-              Message.show("Your KEY ITEMS POCKET is full.", function()
-                engine.Field.locked = false
-                auroraTicketBusy = false
-              end)
-              return
-            end
-            MysteryGift.setFlag(session, FLAG_ENABLE_SHIP_BIRTH_ISLAND, true)
-            MysteryGift.setFlag(session, FLAG_RECEIVED_AURORA_TICKET, true)
-            local okSpace2, Space2 = pcall(require, "src.core.game3.scripting.space")
-            local okFlags2, Flags2 = pcall(require, "src.core.game3.scripting.flags")
-            if okSpace2 and okFlags2 and Space2 and Flags2 and Space2.store then
-              local ctx2 = Space2.vm and Space2.vm.ctx or nil
-              Flags2.setFlag(Space2.store, ctx2, FLAG_ENABLE_SHIP_BIRTH_ISLAND, true)
-              Flags2.setFlag(Space2.store, ctx2, FLAG_RECEIVED_AURORA_TICKET, true)
-              Flags2.setFlag(Space2.store, ctx2, FLAG_SHOWN_AURORA_TICKET, false)
-              Flags2.setVar(Space2.store, ctx2, VAR_MAP_SCENE_VERMILION_CITY, 3)
-              Flags2.setVar(Space2.store, ctx2, VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 5)
-            end
-            state.auroraTicketGiven = true
-            Message.show("{PLAYER} received the AURORATICKET!", function()
-              Message.show("This one has another strange destination...", function()
-                Message.show("You should ask the sailor about it.", function()
-                  engine.Field.locked = false
-                  auroraTicketBusy = false
+      else
+        local alreadyHasOther = (giveMystic and hasAurora) or (giveAurora and hasMystic)
+        Message.show("Oh! Perfect timing!", function()
+          Message.show(alreadyHasOther and "Another unusual ticket arrived for you." or "Something unusual arrived for you.", function()
+            Message.show("It looks like a ticket for the SEAGALLOP ferry.", function()
+              local item = giveMystic and MYSTIC_TICKET or AURORA_TICKET
+              local name = giveMystic and "MYSTICTICKET" or "AURORATICKET"
+              giveTicket(item, name, function()
+                Message.show("I've never seen a destination like this before...", function()
+                  Message.show("You should ask the sailor about it.", unlock)
                 end)
               end)
             end)
           end)
         end)
-      end)
+      end
       return true
     end
 
@@ -1331,14 +1312,13 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       refreshPeriod()
       showTowerDarkrai()
       enableTicketDebugTravel(engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession())
-      tryMysticTicketEvent()
-      tryAuroraTicketEvent()
+      tryTicketEvents()
     end)
     mod.events:on("world.stepped", function(ev)
       refreshPeriod()
       showTowerDarkrai()
       triggerDarkraiScene()
-      tryMysticTicketEvent()
+      tryTicketEvents()
     end)
 
     mod.exports.engine = engine
