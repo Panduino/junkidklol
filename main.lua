@@ -172,8 +172,14 @@ return function(mod)
     -- grow instead of permanently capping every trimmed sheet at 1:1.
     local naturalScale = 1
     local targetScale = back and 1.5 or 1
-    local scale = math.min(naturalScale, maxW / cw, maxH / ch)
-    local drawScale = math.min(targetScale, maxW / cw, maxH / ch)
+    local fitScale = math.min(naturalScale, maxW / cw, maxH / ch)
+    -- Never destructively resize enemy/front art into a smaller cache canvas.
+    -- Keep every native G9 pixel and apply the fit only when drawing. Backs
+    -- retain their established bake/draw behavior.
+    local scale = back and fitScale or 1
+    local drawScale = back
+      and math.min(targetScale, maxW / cw, maxH / ch)
+      or fitScale
     local dw = math.max(1, math.floor(cw * scale + 0.5))
     local dh = math.max(1, math.floor(ch * scale + 0.5))
     local frames = {}
