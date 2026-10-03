@@ -269,7 +269,7 @@ return function(mod)
           local normalBy = math.min(by, 15)
           return -6 + math.floor(normalBy * 0.5 + 0.5)
         end)()
-        or (0 + math.floor(((metric and tonumber(metric.fy)) or 0) * 0.5 + 0.5)),
+        or (4 + math.floor(((metric and tonumber(metric.fy)) or 0) * 0.5 + 0.5)),
     }
     return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
   end
@@ -402,19 +402,15 @@ return function(mod)
             ox = iw * 0.5
             oy = ih * 0.5
           else
-            -- G9 fronts must never inherit a non-uniform FireRed battler
-            -- transform. Preserve their native aspect ratio with one uniform
-            -- fit scale, while retaining the current centered screen anchor.
+            -- Preserve the exact pre-reanchor front render path: do not
+            -- replace FireRed's supplied origin or sampling behavior. Shift
+            -- only the draw coordinates so the old rendering lands on the
+            -- new centered enemy anchor.
             local iw, ih = drawable:getDimensions()
             local nativeOx = tonumber(ox) or 32
             local nativeOy = tonumber(oy) or 32
-            local uniform = meta.drawScale or 1
-            x = (x or 0) + nativeOx * (baseSx or 1) - iw * 0.5 * uniform
-            y = (y or 0) + nativeOy * (baseSy or baseSx or 1) - ih * 0.5 * uniform
-            sx = uniform
-            sy = uniform
-            ox = 0
-            oy = 0
+            x = (x or 0) + (nativeOx - iw * 0.5) * (sx or 1)
+            y = (y or 0) + (nativeOy - ih * 0.5) * (sy or sx or 1)
           end
         end
         return realDraw(drawable, x, y, r, sx, sy, ox, oy, ...)
