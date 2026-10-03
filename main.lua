@@ -1805,6 +1805,11 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
     local heatranActor = nil
     local heatranBusy = false
 
+    local function heatranCaught(session)
+      return session and session.dex and HEATRAN_SPECIES
+        and Dex.isCaught(session.dex, HEATRAN_SPECIES) == true
+    end
+
     local function clearHeatranActor()
       if Objects._byId and Objects._byId[HEATRAN_NPC_ID] then
         Objects._byId[HEATRAN_NPC_ID] = nil
@@ -1834,10 +1839,9 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
 
     local function showHeatran()
       local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-      local caught = session and session.dex and HEATRAN_SPECIES
-        and Dex.isCaught(session.dex, HEATRAN_SPECIES) == true
       local shouldShow = session and session.map == HEATRAN_MAP
-        and HEATRAN_SPECIES and heatranUnlocked(session) and not caught and not heatranBusy
+        and HEATRAN_SPECIES and heatranUnlocked(session)
+        and not heatranCaught(session) and not heatranBusy
       if not shouldShow then clearHeatranActor(); return end
       if heatranActor and Objects._byId and Objects._byId[HEATRAN_NPC_ID] == heatranActor then return end
       clearHeatranActor()
@@ -1851,7 +1855,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       if not sheet then return end
       local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
       local x, y = 7, 5
-      local elevation = engine.elevationAt and engine.elevationAt(x, y) or 0
+      local elevation = engine.elevationAt and engine.elevationAt(x, y) or 3
       local actor = {
         active=true, localId=HEATRAN_NPC_ID, originLocalId=HEATRAN_NPC_ID,
         originMapId=session.map, cellX=x, cellY=y, px=x*16, py=y*16,
@@ -1883,12 +1887,24 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       elseif P.cellX > heatranActor.cellX then P.facing = "left"
       elseif P.cellY < heatranActor.cellY then P.facing = "down"
       else P.facing = "up" end
-      clearHeatranActor()
-      mod.world:startWildBattle(HEATRAN_SPECIES, 70, function()
-        engine.Field.locked = false
-        heatranBusy = false
-        showHeatran()
-      end)
+      local Fade = require("src.ui.game3.fade")
+      local toWhite = Fade.MODE and (Fade.MODE.TO_WHITE or Fade.MODE.WHITE)
+      local fromWhite = Fade.MODE and (Fade.MODE.FROM_WHITE or Fade.MODE.WHITE_IN)
+      local function battle()
+        clearHeatranActor()
+        mod.world:startWildBattle(HEATRAN_SPECIES, 70, function()
+          engine.Field.locked = false
+          heatranBusy = false
+          if not heatranCaught(session) then clearHeatranActor() end
+        end)
+      end
+      if toWhite and fromWhite then
+        Fade.begin(toWhite, 1, function()
+          Fade.begin(fromWhite, 1, battle)
+        end)
+      else
+        battle()
+      end
       return true
     end
 
