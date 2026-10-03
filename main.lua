@@ -244,7 +244,7 @@ return function(mod)
       -- Keep the scene correction, but also respect G9's authored back
       -- placement instead of centering every species identically.
       ox = back
-        and (-24 + math.floor(((metric and tonumber(metric.bx)) or 0) * 0.5 + 0.5))
+        and (-28 + math.floor(((metric and tonumber(metric.bx)) or 0) * 0.5 + 0.5))
         or 2,
       -- Natural G9 fronts are grounded by their trimmed bottom edge; pack fy
       -- is deliberately ignored there. FireRed's centre-origin draw needs the
@@ -253,9 +253,9 @@ return function(mod)
       oy = back
         -- Player platform contact point in the authored 240x135 background is
         -- Shift the player/back battler another 12 px left from the authored platform
-        -- anchor to open space between it and the right-side HUD: -24,+13
+        -- anchor to open space between it and the right-side HUD: -28,+5
         -- while retaining G9's species-specific back metric.
-        and (13 + math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5))
+        and (5 + math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5))
         or (function()
           -- Enemy platform contact point is (178,62), versus FireRed's
           -- ENEMY_MON (176,40): +2,+14 after fullscreen vertical tuning. Preserve natural G9 grounding and
