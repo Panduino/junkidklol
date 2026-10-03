@@ -220,7 +220,8 @@ return function(mod)
     local frames = framesFor(slot, back, shiny == true)
     local img = currentFrame(frames)
     if not img then return nil end
-    local w, h = img:getDimensions()\n    return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
+    local w, h = img:getDimensions()
+    return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
   end
 
   Pokemon.frontPic = function(slot, form, shiny, personality)
