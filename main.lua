@@ -190,19 +190,60 @@ return function(mod)
       local frameImg = love.graphics.newImage(frameData)
       frameImg:setFilter("nearest", "nearest")
       local quad = love.graphics.newQuad(ux0, uy0, cw, ch, fw, sh)
-      local canvas = love.graphics.newCanvas(dw, dh)
-      canvas:setFilter("nearest", "nearest")
-
-      local old = love.graphics.getCanvas()
-      love.graphics.setCanvas(canvas)
-      love.graphics.clear(0, 0, 0, 0)
-      love.graphics.setColor(1, 1, 1, 1)
-      love.graphics.draw(frameImg, quad, 0, 0, 0, scale, scale)
-      love.graphics.setCanvas(old)
-      frames[#frames + 1] = canvas
+      local baked
+      if not back and fitScale < 1 then
+        -- Match G9's own reduction path instead of asking the GPU to sample a
+        -- native-resolution sprite at a fractional scale. The centre sample
+        -- keeps hard pixels; if it lands on transparency, borrow the nearest
+        -- opaque source pixel covered by that destination pixel so thin wings,
+        -- feet, tails and outlines do not disappear ("crunch").
+        local out = love.image.newImageData(dw, dh)
+        local stepX, stepY = cw / dw, ch / dh
+        local baseX = i * fw + ux0
+        for ty = 0, dh - 1 do
+          local syn = uy0 + math.min(ch - 1, math.floor((ty + 0.5) * stepY))
+          local sy0 = uy0 + math.floor(ty * stepY)
+          local sy1 = uy0 + math.min(ch, math.ceil((ty + 1) * stepY))
+          for tx = 0, dw - 1 do
+            local sxn = baseX + math.min(cw - 1, math.floor((tx + 0.5) * stepX))
+            local cr, cg, cb, ca = sheetData:getPixel(sxn, syn)
+            if not ca or ca <= 0 then
+              local sx0 = baseX + math.floor(tx * stepX)
+              local sx1 = baseX + math.min(cw, math.ceil((tx + 1) * stepX))
+              local bestD = math.huge
+              for sy0p = sy0, math.max(sy0, sy1 - 1) do
+                for sx0p = sx0, math.max(sx0, sx1 - 1) do
+                  local pr, pg, pb, pa = sheetData:getPixel(sx0p, sy0p)
+                  if pa and pa > 0 then
+                    local dx, dy = sx0p - sxn, sy0p - syn
+                    local d = dx * dx + dy * dy
+                    if d < bestD then
+                      bestD, cr, cg, cb, ca = d, pr, pg, pb, pa
+                    end
+                  end
+                end
+              end
+            end
+            if ca and ca > 0 then out:setPixel(tx, ty, cr, cg, cb, ca) end
+          end
+        end
+        baked = love.graphics.newImage(out)
+        baked:setFilter("nearest", "nearest")
+      else
+        local canvas = love.graphics.newCanvas(dw, dh)
+        canvas:setFilter("nearest", "nearest")
+        local oldCanvas = love.graphics.getCanvas()
+        love.graphics.setCanvas(canvas)
+        love.graphics.clear(0, 0, 0, 0)
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(frameImg, quad, 0, 0, 0, scale, scale)
+        love.graphics.setCanvas(oldCanvas)
+        baked = canvas
+      end
+      frames[#frames + 1] = baked
     end
 
-    frames._g9DrawScale = drawScale
+    frames._g9DrawScale = (not back and fitScale < 1) and 1 or drawScale
     return frames
   end
 
@@ -269,7 +310,7 @@ return function(mod)
           local normalBy = math.min(by, 15)
           return -6 + math.floor(normalBy * 0.5 + 0.5)
         end)()
-        or (4 + math.floor(((metric and tonumber(metric.fy)) or 0) * 0.5 + 0.5)),
+        or (0 + math.floor(((metric and tonumber(metric.fy)) or 0) * 0.5 + 0.5)),
     }
     return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
   end
