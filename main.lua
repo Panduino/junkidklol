@@ -244,16 +244,22 @@ return function(mod)
       -- Keep the scene correction, but also respect G9's authored back
       -- placement instead of centering every species identically.
       ox = back
-        and (-20 + math.floor(((metric and tonumber(metric.bx)) or 0) * 0.5 + 0.5))
-        or 0,
+        and (-7 + math.floor(((metric and tonumber(metric.bx)) or 0) * 0.5 + 0.5))
+        or 2,
       -- Natural G9 fronts are grounded by their trimmed bottom edge; pack fy
       -- is deliberately ignored there. FireRed's centre-origin draw needs the
       -- equivalent correction based on this frame's actual height. Floaters
       -- receive G9's 35% content-height lift.
       oy = back
-        and math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5)
+        -- Player platform contact point in the authored 240x135 background is
+        -- (65,113). PLAYER_MON is (72,80), so shift the scene anchor -7,+33
+        -- while retaining G9's species-specific back metric.
+        and (33 + math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5))
         or (function()
-          local base = 32 - (h / 2)
+          -- Enemy platform contact point is (178,62), versus FireRed's
+          -- ENEMY_MON (176,40): +2,+22. Preserve natural G9 grounding and
+          -- floater lift relative to that authored contact point.
+          local base = 32 - (h / 2) + 22
           if stem and g9Floaters and g9Floaters[stem] then
             base = base - math.max(2, math.floor(h * 0.35 + 0.5))
           end
@@ -277,7 +283,8 @@ return function(mod)
 
   -- Fullscreen FireRed terrain replacement. Custom art is authored at
   -- 240x135 (16:9); nearest filtering keeps every source pixel crisp.
-  -- Native enemy/player platform layers remain separate and render on top.
+  -- The custom image already contains both battle platforms, so the native
+  -- platform layers must not be composited over it.
   local customGrass
   local function loadCustomGrass()
     if customGrass ~= nil then return customGrass or nil end
@@ -307,15 +314,7 @@ return function(mod)
       love.graphics.setColor(1, 1, 1, 1)
       love.graphics.draw(img, 0, 0)
 
-      local entry = BattleChrome.terrain("grass")
-      if entry then
-        if entry.enemyPlat then
-          love.graphics.draw(entry.enemyPlat, tonumber(enemyOx) or 0, 0)
-        end
-        if entry.playerPlat then
-          love.graphics.draw(entry.playerPlat, tonumber(playerOx) or 0, 0)
-        end
-      end
+      -- Platforms are baked into backgrounds/grass.png.
       return true
     end
   end
