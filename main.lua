@@ -752,16 +752,26 @@ return function(mod)
           return Flags.getVar(Space.store, ctx, id)
         end
 
-        -- After the S.S. Anne has sailed, talking directly to the ferry sailor
-        -- opens the old harbor again without changing the normal Seagallop triggers.
+        -- After the S.S. Anne has sailed, keep the sailor's normal Seagallop
+        -- service and add the abandoned S.S. Anne dock as a second choice.
         if session and session.map == "FR_VERMILION_CITY"
             and liveVar(0x407E) == 3
             and Player.cellX == 24 and Player.cellY == 32 and Player.facing == "down"
             and not Field.isLocked() then
-          Field.lock("ss_anne_old_dock")
-          Message.show("The S.S. ANNE has sailed, but you can still visit the old dock.", function()
-            mod.world:warpTo("FR_SSANNE_EXTERIOR", 31, 6, "down")
-            Field.unlock("ss_anne_old_dock")
+          local Choice = require("src.ui.game3.choice")
+          Field.lock("vermillion_harbor_choice")
+          Message.show("Where would you like to go?", function()
+            Choice.multi({ "SEAGALLOP FERRY", "OLD S.S. ANNE DOCK", "EXIT" }, 0, function(pick)
+              if pick == 0 then
+                Field.unlock("vermillion_harbor_choice")
+                rawFieldInteract(game)
+              elseif pick == 1 then
+                mod.world:warpTo("FR_SSANNE_EXTERIOR", 31, 6, "down")
+                Field.unlock("vermillion_harbor_choice")
+              else
+                Field.unlock("vermillion_harbor_choice")
+              end
+            end, { left = 10, top = 5 })
           end)
           return true
         end
