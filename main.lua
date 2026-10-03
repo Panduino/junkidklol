@@ -147,10 +147,16 @@ return function(mod)
   local WATER_ADDITIONS = {
     FR_ROUTE_4={7,98,116}, FR_ROUTE_6={183,270,283}, FR_ROUTE_9={339,341},
     FR_ROUTE_10={170,223}, FR_ROUTE_12={194,211,318}, FR_ROUTE_13={320,349},
-    FR_ROUTE_17={278,422}, FR_ROUTE_18={418,456}, FR_ROUTE_19={363,366},
-    FR_ROUTE_20={222,370}, FR_ROUTE_21={258,393}, FR_ROUTE_22={60,339},
+    FR_ROUTE_17={278,422}, FR_ROUTE_18={418,456}, FR_ROUTE_19={363,366,226},
+    FR_ROUTE_20={222,370,226}, FR_ROUTE_21={258,393,226}, FR_ROUTE_22={60,339},
     FR_ROUTE_23={131,138,140}, FR_ROUTE_24={118,349}, FR_ROUTE_25={283,418},
     FR_ROUTE_28={223,456},
+  }
+
+  -- Time-specific water additions. Totodile mirrors Squirtle's custom water
+  -- location, but only during the RTC night period.
+  local WATER_PERIOD_ADDITIONS = {
+    FR_ROUTE_4 = { night={158} },
   }
 
   local PROFILE_BY_ID = {}
@@ -352,10 +358,16 @@ return function(mod)
       for _, nat in ipairs(WATER_ADDITIONS[profile.id] or {}) do
         uniqueAppend(waterSlots, waterSeen, entry(nat, profile.min, profile.max))
       end
+      local periodWater = WATER_PERIOD_ADDITIONS[profile.id]
+      for _, nat in ipairs(periodWater and periodWater[period] or {}) do
+        uniqueAppend(waterSlots, waterSeen, entry(nat, profile.min, profile.max))
+      end
       result.water = { rate = 15, slots = waterSlots }
 
       local fishSlots = {}
-      for _, nat in ipairs(wt.fishing or {}) do
+      for i, nat in ipairs(wt.fishing or {}) do
+        -- Route 21's last two Super Rod slots become Relicanth.
+        if profile.id == "FR_ROUTE_21" and (i == 9 or i == 10) then nat = 369 end
         fishSlots[#fishSlots + 1] = entry(nat, profile.min, profile.max)
       end
       result.fishing = { rate = 0, slots = fishSlots }
