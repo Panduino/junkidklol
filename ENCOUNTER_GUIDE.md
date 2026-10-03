@@ -1036,7 +1036,7 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 482 | Azelf | Not currently supplied by this compatibility mod |
 | 483 | Dialga | Not currently supplied by this compatibility mod |
 | 484 | Palkia | Not currently supplied by this compatibility mod |
-| 485 | Heatran | Not currently supplied by this compatibility mod |
+| 485 | Heatran | Stationary Lv70 encounter in the large Mt. Ember Summit Path 2F interior chamber |
 | 486 | Regigigas | Stationary Lv70 encounter in Dotted Hole's Sapphire Room after Regirock, Regice, and Registeel have all been caught |
 | 487 | Giratina | Not currently supplied by this compatibility mod |
 | 488 | Cresselia | Mt. Moon B2F at night after Darkrai event |
