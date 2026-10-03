@@ -701,6 +701,29 @@ return function(mod)
     local Message = require("src.ui.game3.message")
     local GfxIds = require("src.core.game3.scripting.gfx_ids")
 
+    -- Darkrai and Cresselia are authored as stationary EventObjects rather than
+    -- Untamed OWEs, so give just those actors Untamed's down-facing walk-frame
+    -- alternation (frame 0/1) without changing their coordinates.
+    if not Objects._rtcUntamedLegendIdleAnim then
+      Objects._rtcUntamedLegendIdleAnim = true
+      local rawObjectsUpdate = Objects.update
+      Objects.update = function(game, ...)
+        local result = rawObjectsUpdate(game, ...)
+        for _, lid in ipairs({126, 127}) do
+          local actor = Objects._byId and Objects._byId[lid]
+          if actor and actor._uadvIdleSheet and actor._uadvIdleRow then
+            actor._uadvIdleTick = ((actor._uadvIdleTick or 0) + 1) % 32
+            -- Mostly hold the neutral pose, with a brief walk-frame motion.
+            local frame = actor._uadvIdleTick >= 20 and actor._uadvIdleTick < 28 and 1 or 0
+            local gid = string.format("uadv:%d:%d:0:%d:0",
+              actor._uadvIdleSheet, frame, actor._uadvIdleRow)
+            actor.graphicsId, actor.sprite = gid, gid
+          end
+        end
+        return result
+      end
+    end
+
     local FOSSIL_DEALER_ID = 125
     local FOSSIL_PRICE = 3000
     local ROOT_FOSSIL, CLAW_FOSSIL = 286, 287
@@ -1386,7 +1409,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
         radius={x=0,y=0}, rangeX=0, rangeY=0,
         visible=true, hidden=false, invisible=false, frozen=true,
         passable=false, moving=false, progress=0, stepFrames=16,
-        scriptBusy=false,
+        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=8,
         def={ localId=CRESSELIA_NPC_ID, x=x, y=y, graphicsId=graphicsId,
           movementType=0x09, facing="down" },
       }
@@ -1535,7 +1558,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
         radius={x=0,y=0}, rangeX=0, rangeY=0,
         visible=true, hidden=false, invisible=false, frozen=true,
         passable=false, moving=false, progress=0, stepFrames=16,
-        scriptBusy=false,
+        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=0,
         def={ localId=DARKRAI_NPC_ID, x=x, y=y, graphicsId=graphicsId,
           movementType=0x09, facing="down" },
       }
