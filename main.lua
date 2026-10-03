@@ -936,12 +936,8 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
               else
                 FlagsSea.setVar(SpaceSea.store, ctx, 0x8004, 9)
                 FlagsSea.setVar(SpaceSea.store, ctx, 0x8006, dest)
-                local task = oldFerryTask(ctx, adapters, dest)
-                navelReturnTask = function()
-                  local done = task()
-                  if done then Field.unlock("navel_rock_ferry") end
-                  return done
-                end
+                Field.unlock("navel_rock_ferry")
+                navelReturnTask = oldFerryTask(ctx, adapters, dest)
               end
             end)
           end
@@ -989,12 +985,8 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
               else
                 FlagsSea.setVar(SpaceSea.store, ctx, 0x8004, 10)
                 FlagsSea.setVar(SpaceSea.store, ctx, 0x8006, dest)
-                local task = oldFerryTask(ctx, adapters, dest)
-                birthReturnTask = function()
-                  local done = task()
-                  if done then Field.unlock("birth_island_ferry") end
-                  return done
-                end
+                Field.unlock("birth_island_ferry")
+                birthReturnTask = oldFerryTask(ctx, adapters, dest)
               end
             end)
           end
