@@ -780,7 +780,7 @@ return function(mod)
       local rawObjectsUpdate = Objects.update
       Objects.update = function(game, ...)
         local result = rawObjectsUpdate(game, ...)
-        for _, lid in ipairs({126, 127}) do
+        for _, lid in ipairs({126, 127, 128, 129, 130, 131, 132}) do
           local actor = Objects._byId and Objects._byId[lid]
           if actor and actor._uadvIdleSheet and actor._uadvIdleRow then
             actor._uadvIdleTick = ((actor._uadvIdleTick or 0) + 1) % 32
@@ -1693,7 +1693,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
 
     local REGICE_SPECIES = Pokemon.speciesFromNational(378)
     local REGICE_MAP = "FR_FOUR_ISLAND_ICEFALL_CAVE_BACK"
-    local REGICE_NPC_ID = 126
+    local REGICE_NPC_ID = 128
     local regiceActor = nil
     local regiceBusy = false
 
@@ -1788,7 +1788,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
 
     local REGISTEEL_SPECIES = Pokemon.speciesFromNational(379)
     local REGISTEEL_MAP = "FR_FIVE_ISLAND_ROCKET_WAREHOUSE"
-    local REGISTEEL_NPC_ID = 126
+    local REGISTEEL_NPC_ID = 129
     local registeelActor = nil
     local registeelBusy = false
 
@@ -1883,7 +1883,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
 
     local REGIROCK_SPECIES = Pokemon.speciesFromNational(377)
     local REGIROCK_MAP = "FR_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER"
-    local REGIROCK_NPC_ID = 126
+    local REGIROCK_NPC_ID = 130
     local regirockActor = nil
     local regirockBusy = false
 
@@ -1978,7 +1978,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
 
     local REGIGIGAS_SPECIES = Pokemon.speciesFromNational(486)
     local REGIGIGAS_MAP = "FR_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM"
-    local REGIGIGAS_NPC_ID = 126
+    local REGIGIGAS_NPC_ID = 131
     local regigigasActor = nil
     local regigigasBusy = false
 
@@ -2077,7 +2077,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
 
     local HEATRAN_SPECIES = Pokemon.speciesFromNational(485)
     local HEATRAN_MAP = "FR_MT_EMBER_RUBY_PATH_B5F"
-    local HEATRAN_NPC_ID = 126
+    local HEATRAN_NPC_ID = 132
     local heatranActor = nil
     local heatranBusy = false
 
