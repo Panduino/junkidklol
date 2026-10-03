@@ -275,6 +275,51 @@ return function(mod)
     return originalBack(slot, form, shiny)
   end
 
+  -- Fullscreen FireRed terrain replacement. Custom art is authored at
+  -- 240x135 (16:9); nearest filtering keeps every source pixel crisp.
+  -- Native enemy/player platform layers remain separate and render on top.
+  local customGrass
+  local function loadCustomGrass()
+    if customGrass ~= nil then return customGrass or nil end
+    customGrass = false
+    if not (love and love.graphics and mod.assets and mod.assets.path) then return nil end
+    local okPath, path = pcall(mod.assets.path, mod.assets, "backgrounds/grass.png")
+    if not okPath or not path then return nil end
+    local okImg, img = pcall(love.graphics.newImage, path)
+    if not okImg or not img then return nil end
+    if img.setFilter then img:setFilter("nearest", "nearest") end
+    customGrass = img
+    return img
+  end
+
+  local okBg, BattleBg = pcall(require, "src.core.game3.battle.bg")
+  local okChrome, BattleChrome = pcall(require, "src.ui.game3.battle_chrome")
+  if okBg and okChrome and BattleBg and BattleChrome and type(BattleBg.draw) == "function" then
+    local originalBgDraw = BattleBg.draw
+    BattleBg.draw = function(id, enemyOx, playerOx, bgOx)
+      local key = BattleBg.sheetKey(id)
+      if key ~= "grass" then
+        return originalBgDraw(id, enemyOx, playerOx, bgOx)
+      end
+      local img = loadCustomGrass()
+      if not img then return originalBgDraw(id, enemyOx, playerOx, bgOx) end
+
+      love.graphics.setColor(1, 1, 1, 1)
+      love.graphics.draw(img, 0, 0)
+
+      local entry = BattleChrome.terrain("grass")
+      if entry then
+        if entry.enemyPlat then
+          love.graphics.draw(entry.enemyPlat, tonumber(enemyOx) or 0, 0)
+        end
+        if entry.playerPlat then
+          love.graphics.draw(entry.playerPlat, tonumber(playerOx) or 0, 0)
+        end
+      end
+      return true
+    end
+  end
+
   -- Gen 3's stock battle renderer hard-codes a 32,32 origin because vanilla
   -- pics are 64x64. Intercept only draws of our G9 images: use their real
   -- centre as the origin and apply the scene/alignment corrections above.
