@@ -1673,229 +1673,135 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
 
     -- Regi trio: stationary Sevii encounters. They are always present once
     -- their locations are reachable and disappear permanently only when caught.
-    local REGI_ENCOUNTERS = {
-      { nat=378, species=378, map="FR_FOUR_ISLAND_ICEFALL_CAVE_BACK", x=12, y=8, id=123, tick=0 }, -- Regice
-      { nat=379, species=379, map="FR_FIVE_ISLAND_ROCKET_WAREHOUSE", x=13, y=8, id=124, tick=7 }, -- Registeel
-      { nat=377, species=377, map="FR_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER", x=11, y=8, id=125, tick=14 }, -- Regirock
-      { nat=486, species=Pokemon.speciesFromNational(486), map="FR_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM", x=7, y=7, id=128, tick=5, requiresRegis=true, requiresSapphire=true }, -- Regigigas
+    -- Regirock / Regice / Registeel / Regigigas / Heatran use the exact same
+    -- one-actor stationary EventObject lifecycle as the working Cresselia scene.
+    local STATIONARY_LEGENDS = {
+      { nat=378, species=Pokemon.speciesFromNational(378), map="FR_FOUR_ISLAND_ICEFALL_CAVE_BACK", x=12, y=8, id=123, level=50, tick=0 },
+      { nat=379, species=Pokemon.speciesFromNational(379), map="FR_FIVE_ISLAND_ROCKET_WAREHOUSE", x=13, y=8, id=124, level=50, tick=7 },
+      { nat=377, species=Pokemon.speciesFromNational(377), map="FR_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER", x=11, y=8, id=125, level=50, tick=14 },
+      { nat=486, species=Pokemon.speciesFromNational(486), map="FR_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM", x=7, y=5, id=128, level=70, tick=5, gate="regigigas" },
+      { nat=485, species=Pokemon.speciesFromNational(485), map="FR_MT_EMBER_RUBY_PATH_B5F", x=7, y=5, id=129, level=70, tick=11, gate="heatran" },
     }
-    local regiActors, regiBusy = {}, false
 
-    local function clearRegiActor(def)
-      if Objects._byId and Objects._byId[def.id] then
-        Objects._byId[def.id] = nil
+    local stationaryActor = nil
+    local stationaryDef = nil
+    local stationaryBusy = false
+
+    local function clearStationaryLegend()
+      if stationaryDef and Objects._byId and Objects._byId[stationaryDef.id] then
+        Objects._byId[stationaryDef.id] = nil
         for i = #(Objects._order or {}), 1, -1 do
-          if Objects._order[i] == def.id then table.remove(Objects._order, i) end
+          if Objects._order[i] == stationaryDef.id then table.remove(Objects._order, i) end
         end
       end
-      regiActors[def.id] = nil
+      stationaryActor = nil
+      stationaryDef = nil
     end
 
-    local function showRegis()
-      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-      for _, def in ipairs(REGI_ENCOUNTERS) do
-        local caught = session and session.dex and Dex.isCaught(session.dex, def.species) == true
-        local unlocked = true
-        if def.requiresRegis then
-          unlocked = session and session.dex
-            and Dex.isCaught(session.dex, 377) == true
-            and Dex.isCaught(session.dex, 378) == true
-            and Dex.isCaught(session.dex, 379) == true
-        end
-        if def.requiresSapphire then
-          local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
-          local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
-          local recoveredSapphire = okSpace and okFlags and Space and Space.store and Flags
-            and Flags.getFlag(Space.store, nil, "FLAG_RECOVERED_SAPPHIRE") == true
-          local hasSapphire = false
-          if session and session.bag then
-            local okBag, Bag = pcall(require, "src.core.game3.bag")
-            hasSapphire = okBag and Bag and type(Bag.has) == "function"
-              and Bag.has(session.bag, 374, 1) == true
-          end
-          -- Keep the Regi-trio requirement above, and additionally require
-          -- the Sapphire quest to have reached recovery/pickup. The key-item
-          -- fallback covers saves where the story flag store is out of sync.
-          unlocked = unlocked and (recoveredSapphire or hasSapphire)
-        end
-        if def.requiresRuby then
-          local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
-          local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
-          local gotRubyFlag = okSpace and okFlags and Space and Space.store and Flags
-            and Flags.getFlag(Space.store, nil, "FLAG_GOT_RUBY") == true
-          local hasRuby = false
-          if session and session.bag then
-            local okBag, Bag = pcall(require, "src.core.game3.bag")
-            hasRuby = okBag and Bag and type(Bag.has) == "function"
-              and Bag.has(session.bag, 373, 1) == true
-          end
-          -- Picking up the Ruby is the unlock point. Accept either the story
-          -- flag or the key item itself so this works across imported/older
-          -- saves whose script flag store may not mirror the live bag yet.
-          unlocked = gotRubyFlag or hasRuby
-        end
-        local shouldShow = session and session.map == def.map and unlocked and not caught and not regiBusy
-        if not shouldShow then
-          clearRegiActor(def)
-        elseif not (regiActors[def.id] and Objects._byId and Objects._byId[def.id] == regiActors[def.id]) then
-          clearRegiActor(def)
-          if Objects._byId and Objects._order then
-            local personality = engine.random32 and engine.random32() or 0
-            local atlasSpecies = engine.expansionSpecies(def.species, personality)
-            local female = engine.femaleFor and engine.femaleFor(def.species, personality) or false
-            local sheet, row = atlasSpecies and engine.Gfx.sheetFor(atlasSpecies, female, false)
-            if sheet then
-              local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
-              local elevation = engine.elevationAt and engine.elevationAt(def.x, def.y) or 3
-              local actor = {
-                active=true, localId=def.id, originLocalId=def.id, originMapId=session.map,
-                cellX=def.x, cellY=def.y, px=def.x*16, py=def.y*16,
-                homeX=def.x, homeY=def.y, targetX=def.x, targetY=def.y,
-                facing="down", sprite=graphicsId, graphicsId=graphicsId,
-                elevation=elevation, currentElevation=elevation,
-                movementType=0x09, movement="STAY", range="DOWN",
-                radius={x=0,y=0}, rangeX=0, rangeY=0,
-                visible=true, hidden=false, invisible=false, frozen=true,
-                passable=false, moving=false, progress=0, stepFrames=16,
-                scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=def.tick,
-                def={localId=def.id,x=def.x,y=def.y,graphicsId=graphicsId,movementType=0x09,facing="down"},
-              }
-              Objects._byId[def.id] = actor
-              Objects._order[#Objects._order + 1] = def.id
-              regiActors[def.id] = actor
-            end
-          end
-        end
-      end
+    local function stationaryCaught(session, def)
+      return session and session.dex and def.species
+        and Dex.isCaught(session.dex, def.species) == true
     end
 
-    local function triggerRegi()
-      if regiBusy then return false end
-      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-      if not session then return false end
-      local P = engine.Player
-      for _, def in ipairs(REGI_ENCOUNTERS) do
-        local actor = regiActors[def.id]
-        if actor and actor.active and session.map == def.map
-          and math.abs(P.cellX - actor.cellX) + math.abs(P.cellY - actor.cellY) == 1 then
-          regiBusy = true
-          engine.Field.locked = true
-          if P.cellX < actor.cellX then P.facing = "right"
-          elseif P.cellX > actor.cellX then P.facing = "left"
-          elseif P.cellY < actor.cellY then P.facing = "down"
-          else P.facing = "up" end
-          clearRegiActor(def)
-          mod.world:startWildBattle(def.species, (def.nat == 486 or def.nat == 485) and 70 or 50, function()
-            engine.Field.locked = false
-            regiBusy = false
-            showRegis()
-          end)
-          return true
-        end
-      end
-      return false
-    end
-
-    -- Heatran: dedicated stationary encounter at the former Ruby position.
-    -- Keep this separate from the Regi loop so Ruby-story state and actor
-    -- lifetime cannot be suppressed by shared Regi encounter state.
-    local HEATRAN_SPECIES = Pokemon.speciesFromNational(485)
-    local HEATRAN_MAP = "FR_MT_EMBER_RUBY_PATH_B5F"
-    local HEATRAN_NPC_ID = 129
-    local heatranActor = nil
-    local heatranBusy = false
-
-    local function heatranCaught(session)
-      return session and session.dex and HEATRAN_SPECIES
-        and Dex.isCaught(session.dex, HEATRAN_SPECIES) == true
-    end
-
-    local function clearHeatranActor()
-      if Objects._byId and Objects._byId[HEATRAN_NPC_ID] then
-        Objects._byId[HEATRAN_NPC_ID] = nil
-        for i = #(Objects._order or {}), 1, -1 do
-          if Objects._order[i] == HEATRAN_NPC_ID then table.remove(Objects._order, i) end
-        end
-      end
-      heatranActor = nil
-    end
-
-    local function heatranUnlocked(session)
+    local function storyFlag(name)
       local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
       local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
-      local got = okSpace and okFlags and Space and Space.store and Flags
-        and Flags.getFlag(Space.store, nil, "FLAG_GOT_RUBY") == true
-      if not got and session and session.flags then
-        got = session.flags[0x2DD] == true or session.flags[tostring(0x2DD)] == true
-          or session.flags.FLAG_GOT_RUBY == true
-      end
-      if not got and session and session.bag then
-        local okBag, Bag = pcall(require, "src.core.game3.bag")
-        got = okBag and Bag and type(Bag.has) == "function"
-          and Bag.has(session.bag, 373, 1) == true
-      end
-      return got == true
+      return okSpace and okFlags and Space and Space.store and Flags
+        and Flags.getFlag(Space.store, nil, name) == true
     end
 
-    local function showHeatran()
+    local function hasKeyItem(session, item)
+      if not session or not session.bag then return false end
+      local okBag, Bag = pcall(require, "src.core.game3.bag")
+      return okBag and Bag and type(Bag.has) == "function"
+        and Bag.has(session.bag, item, 1) == true
+    end
+
+    local function stationaryUnlocked(session, def)
+      if def.gate == "heatran" then
+        return storyFlag("FLAG_GOT_RUBY") or hasKeyItem(session, 373)
+      end
+      if def.gate == "regigigas" then
+        if not session or not session.dex then return false end
+        local trio = Dex.isCaught(session.dex, Pokemon.speciesFromNational(377)) == true
+          and Dex.isCaught(session.dex, Pokemon.speciesFromNational(378)) == true
+          and Dex.isCaught(session.dex, Pokemon.speciesFromNational(379)) == true
+        return trio and (storyFlag("FLAG_RECOVERED_SAPPHIRE") or hasKeyItem(session, 374))
+      end
+      return true
+    end
+
+    local function stationaryForMap(map)
+      for _, def in ipairs(STATIONARY_LEGENDS) do
+        if def.map == map then return def end
+      end
+      return nil
+    end
+
+    local function showStationaryLegend()
       local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-      local shouldShow = session and session.map == HEATRAN_MAP
-        and HEATRAN_SPECIES and heatranUnlocked(session)
-        and not heatranCaught(session) and not heatranBusy
-      if not shouldShow then clearHeatranActor(); return end
-      if heatranActor and Objects._byId and Objects._byId[HEATRAN_NPC_ID] == heatranActor then return end
-      clearHeatranActor()
+      local def = session and stationaryForMap(session.map)
+      local shouldShow = def and def.species and stationaryUnlocked(session, def)
+        and not stationaryCaught(session, def) and not stationaryBusy
+      if not shouldShow then clearStationaryLegend(); return end
+      if stationaryActor and stationaryDef == def and Objects._byId
+        and Objects._byId[def.id] == stationaryActor then return end
+      clearStationaryLegend()
       if not Objects._byId or not Objects._order then return end
 
       local personality = engine.random32 and engine.random32() or 0
-      local atlasSpecies = engine.expansionSpecies(HEATRAN_SPECIES, personality)
+      local atlasSpecies = engine.expansionSpecies(def.species, personality)
       if not atlasSpecies then return end
-      local female = engine.femaleFor and engine.femaleFor(HEATRAN_SPECIES, personality) or false
+      local female = engine.femaleFor and engine.femaleFor(def.species, personality) or false
       local sheet, row = engine.Gfx.sheetFor(atlasSpecies, female, false)
       if not sheet then return end
       local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
-      local x, y = 7, 5
-      local elevation = engine.elevationAt and engine.elevationAt(x, y) or 3
+      local elevation = engine.elevationAt and engine.elevationAt(def.x, def.y) or 3
       local actor = {
-        active=true, localId=HEATRAN_NPC_ID, originLocalId=HEATRAN_NPC_ID,
-        originMapId=session.map, cellX=x, cellY=y, px=x*16, py=y*16,
-        homeX=x, homeY=y, targetX=x, targetY=y,
+        active=true, localId=def.id, originLocalId=def.id,
+        originMapId=session.map, cellX=def.x, cellY=def.y, px=def.x*16, py=def.y*16,
+        homeX=def.x, homeY=def.y, targetX=def.x, targetY=def.y,
         facing="down", sprite=graphicsId, graphicsId=graphicsId,
         elevation=elevation, currentElevation=elevation,
         movementType=0x09, movement="STAY", range="DOWN",
         radius={x=0,y=0}, rangeX=0, rangeY=0,
         visible=true, hidden=false, invisible=false, frozen=true,
         passable=false, moving=false, progress=0, stepFrames=16,
-        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=11,
-        def={localId=HEATRAN_NPC_ID,x=x,y=y,graphicsId=graphicsId,
-          movementType=0x09,facing="down"},
+        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=def.tick,
+        def={ localId=def.id, x=def.x, y=def.y, graphicsId=graphicsId,
+          movementType=0x09, facing="down" },
       }
-      Objects._byId[HEATRAN_NPC_ID] = actor
-      Objects._order[#Objects._order + 1] = HEATRAN_NPC_ID
-      heatranActor = actor
+      Objects._byId[def.id] = actor
+      Objects._order[#Objects._order + 1] = def.id
+      stationaryActor = actor
+      stationaryDef = def
     end
 
-    local function triggerHeatran()
-      if not heatranActor or not heatranActor.active or heatranBusy then return false end
+    local function triggerStationaryLegend()
+      if not stationaryActor or not stationaryActor.active or stationaryBusy or not stationaryDef then return false end
       local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-      if not session or session.map ~= HEATRAN_MAP then return false end
+      local def = stationaryDef
+      if not session or session.map ~= def.map then return false end
       local P = engine.Player
-      if math.abs(P.cellX - heatranActor.cellX) + math.abs(P.cellY - heatranActor.cellY) ~= 1 then return false end
-      heatranBusy = true
-      engine.Field.locked = true
-      if P.cellX < heatranActor.cellX then P.facing = "right"
-      elseif P.cellX > heatranActor.cellX then P.facing = "left"
-      elseif P.cellY < heatranActor.cellY then P.facing = "down"
-      else P.facing = "up" end
+      local distance = math.abs(P.cellX - stationaryActor.cellX) + math.abs(P.cellY - stationaryActor.cellY)
+      if distance ~= 1 then return false end
+
       local Fade = require("src.ui.game3.fade")
+      stationaryBusy = true
+      engine.Field.locked = true
+      if P.cellX < stationaryActor.cellX then P.facing = "right"
+      elseif P.cellX > stationaryActor.cellX then P.facing = "left"
+      elseif P.cellY < stationaryActor.cellY then P.facing = "down"
+      else P.facing = "up" end
+
       local toWhite = Fade.MODE and (Fade.MODE.TO_WHITE or Fade.MODE.WHITE)
       local fromWhite = Fade.MODE and (Fade.MODE.FROM_WHITE or Fade.MODE.WHITE_IN)
       local function battle()
-        clearHeatranActor()
-        mod.world:startWildBattle(HEATRAN_SPECIES, 70, function()
+        clearStationaryLegend()
+        mod.world:startWildBattle(def.species, def.level, function()
           engine.Field.locked = false
-          heatranBusy = false
-          if not heatranCaught(session) then clearHeatranActor() end
+          stationaryBusy = false
+          if not stationaryCaught(session, def) then clearStationaryLegend() end
         end)
       end
       if toWhite and fromWhite then
@@ -2072,8 +1978,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       end
       showTowerDarkrai()
       showCresselia()
-      showRegis()
-      showHeatran()
+      showStationaryLegend()
       tryTicketEvents()
     end)
     mod.events:on("world.stepped", function(ev)
@@ -2082,10 +1987,8 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       triggerDarkraiScene()
       showCresselia()
       triggerCresseliaScene()
-      showRegis()
-      triggerRegi()
-      showHeatran()
-      triggerHeatran()
+      showStationaryLegend()
+      triggerStationaryLegend()
       tryTicketEvents()
     end)
 
