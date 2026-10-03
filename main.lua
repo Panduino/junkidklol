@@ -244,7 +244,7 @@ return function(mod)
       -- Keep the scene correction, but also respect G9's authored back
       -- placement instead of centering every species identically.
       ox = back
-        and (-7 + math.floor(((metric and tonumber(metric.bx)) or 0) * 0.5 + 0.5))
+        and (-19 + math.floor(((metric and tonumber(metric.bx)) or 0) * 0.5 + 0.5))
         or 2,
       -- Natural G9 fronts are grounded by their trimmed bottom edge; pack fy
       -- is deliberately ignored there. FireRed's centre-origin draw needs the
@@ -252,7 +252,8 @@ return function(mod)
       -- receive G9's 35% content-height lift.
       oy = back
         -- Player platform contact point in the authored 240x135 background is
-        -- (65,113). PLAYER_MON is (72,80), so shift the scene anchor -7,+33
+        -- Shift the player/back battler another 12 px left from the authored platform
+        -- anchor to open space between it and the right-side HUD: -19,+33
         -- while retaining G9's species-specific back metric.
         and (33 + math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5))
         or (function()
@@ -363,6 +364,18 @@ return function(mod)
       love.graphics.pop()
       return true
     end)
+  end
+
+  -- Drop only the player's native singles healthbox below the opposing
+  -- battler. Keep its stock X center so the full 96px composite stays inside
+  -- the 240px Gen3 HUD canvas.
+  local okHealthbox, Healthbox = pcall(require, "src.core.game3.battle.healthbox")
+  if okHealthbox and Healthbox then
+    Healthbox.PLAYER_CENTER.y = 100
+    if Healthbox.CENTERS and Healthbox.CENTERS[false]
+        and Healthbox.CENTERS[false][0] then
+      Healthbox.CENTERS[false][0].y = 100
+    end
   end
 
   -- Gen 3's stock battle renderer hard-codes a 32,32 origin because vanilla
