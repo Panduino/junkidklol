@@ -196,7 +196,9 @@ return function(mod)
   for _, p in ipairs(PROFILES) do PROFILE_BY_ID[p.id] = p end
 
   local function typeList(nat, Pokemon)
-    local species = nat <= 386 and nat or nat + 64
+    local species = Pokemon.speciesFromNational and Pokemon.speciesFromNational(nat)
+      or (nat <= 251 and nat or nil)
+    if not species then return {} end
     local ok, types = pcall(Pokemon.types, species)
     if not ok or type(types) ~= "table" then return {} end
     return {types[1], types[2]}
@@ -460,8 +462,9 @@ return function(mod)
 
     -- Replace every Gen 1-4 trade / held-item trade evolution with a normal
     -- level-up evolution so the full dex remains obtainable in single-player.
-    -- FireRed evolution method 4 is EVO_LEVEL; National Dex species use
-    -- their dex number + 64 as the live engine slot.
+    -- FireRed evolution method 4 is EVO_LEVEL. Resolve targets through the
+    -- installed National Dex mapping because internal SPECIES ids are not
+    -- National Dex numbers.
     do
       local EVO_LEVEL = 4
       local function slot(nat)
@@ -532,9 +535,9 @@ return function(mod)
       if Owe and type(Owe.tick) == "function" and not Owe._rareMythicalCompat then
         local Dex = require("src.core.game3.dex")
         local SHAYMIN_NAT = 492
-        local SHAYMIN_SPECIES = SHAYMIN_NAT + 64
+        local SHAYMIN_SPECIES = Pokemon.speciesFromNational(SHAYMIN_NAT)
         local CELEBI_NAT = 251
-        local CELEBI_SPECIES = CELEBI_NAT
+        local CELEBI_SPECIES = Pokemon.speciesFromNational(CELEBI_NAT) or CELEBI_NAT
         local rawTick = Owe.tick
         local rawWildArea = engine.wildArea
         local inOweTick = false
@@ -951,8 +954,8 @@ return function(mod)
     local function giveExtraFossilMon(session, id, fossil)
       local state = extraFossilState(session)
       Field.lock("extra_fossil_lab")
-      local species = fossil.species
-      if species > 386 then species = species + 64 end
+      local species = Pokemon.speciesFromNational and Pokemon.speciesFromNational(fossil.species)
+      if not species then return false end
       local ok = Party.giveMon(session, species, 5, nil, {toPC=true})
       if ok then
         state.pending, state.ready = nil, false
@@ -1021,7 +1024,7 @@ return function(mod)
             and not Field.isLocked() then
           local state = session.modData and session.modData[mod.id] or nil
           local cresseliaIsCaught = session.dex
-            and Dex.isCaught(session.dex, 488 + 64) == true
+            and Dex.isCaught(session.dex, Pokemon.speciesFromNational(488)) == true
           if state and state.darkraiTowerTriggered == true and not cresseliaIsCaught then
             local dx, dy = 0, 0
             if Player.facing == "up" then dy=-1 elseif Player.facing == "down" then dy=1
@@ -1414,7 +1417,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
     -- found at night in Mt. Moon's old fossil chamber. Defeating it does not
     -- consume the encounter; only catching it completes the event.
     local CRESSELIA_NAT = 488
-    local CRESSELIA_SPECIES = CRESSELIA_NAT + 64
+    local CRESSELIA_SPECIES = Pokemon.speciesFromNational(CRESSELIA_NAT)
     local CRESSELIA_MAP = "FR_MT_MOON_B2F"
     local CRESSELIA_NPC_ID = 127
     local cresseliaActor = nil
@@ -1531,7 +1534,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
     end
 
     local DARKRAI_NAT = 491
-    local DARKRAI_SPECIES = DARKRAI_NAT + 64
+    local DARKRAI_SPECIES = Pokemon.speciesFromNational(DARKRAI_NAT)
     local TOWER_7F = "FR_POKEMON_TOWER_7F"
     local towerActor = nil
     local darkraiSceneBusy = false
@@ -1675,8 +1678,8 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       { nat=378, species=378, map="FR_FOUR_ISLAND_ICEFALL_CAVE_BACK", x=12, y=8, id=123, tick=0 }, -- Regice
       { nat=379, species=379, map="FR_FIVE_ISLAND_ROCKET_WAREHOUSE", x=13, y=8, id=124, tick=7 }, -- Registeel
       { nat=377, species=377, map="FR_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER", x=11, y=8, id=125, tick=14 }, -- Regirock
-      { nat=486, species=550, map="FR_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM", x=7, y=7, id=128, tick=5, requiresRegis=true }, -- Regigigas
-      { nat=485, species=549, map="FR_MT_EMBER_SUMMIT_PATH_2F", x=24, y=22, id=129, tick=11 }, -- Heatran
+      { nat=486, species=Pokemon.speciesFromNational(486), map="FR_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM", x=7, y=7, id=128, tick=5, requiresRegis=true }, -- Regigigas
+      { nat=485, species=Pokemon.speciesFromNational(485), map="FR_MT_EMBER_SUMMIT_PATH_2F", x=24, y=22, id=129, tick=11 }, -- Heatran
     }
     local regiActors, regiBusy = {}, false
 
