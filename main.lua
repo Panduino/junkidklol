@@ -141,39 +141,45 @@ return function(mod)
     if not okData or not sheetData then return nil end
 
     local sw, sh = sheetData:getDimensions()
-    -- DBK solo sheets are horizontal strips of square source frames.
     local fw, fh = sh, sh
     if fw <= 0 or sw < fw then return nil end
     local count = math.max(1, math.floor(sw / fw + 0.0001))
     local frames = {}
 
-    -- G9's own pack is authored at different front/back scales.  More
-    -- importantly, G9 sizes the visible Pokemon, not the transparent source
-    -- frame.  Crop each frame to its opaque content before fitting it.
-    local targetH = back and 62 or 52
-    local targetW = back and 62 or 54
-    local groundY = back and 64 or 57
+    -- Preserve G9/DBK's authored scale.  The source pack uses 2x front and
+    -- 3x back render scales; convert source pixels back to screen pixels and
+    -- only shrink when a genuinely large Pokemon would overrun the Gen 3
+    -- battle scene.  There is intentionally no 64x64 output canvas.
+    local packScale = back and 3 or 2
+    local maxW = back and 112 or 96
+    local maxH = back and 104 or 88
 
     for i = 0, count - 1 do
       local frameData = love.image.newImageData(fw, fh)
       frameData:paste(sheetData, 0, 0, i * fw, 0, fw, fh)
       local bx, by, bw, bh = opaqueBounds(frameData)
+
+      local scale = 1 / packScale
+      local dw, dh = bw * scale, bh * scale
+      if dw > maxW or dh > maxH then
+        local fit = math.min(maxW / dw, maxH / dh)
+        scale = scale * fit
+        dw, dh = bw * scale, bh * scale
+      end
+
+      local outW = math.max(1, math.floor(dw + 0.5))
+      local outH = math.max(1, math.floor(dh + 0.5))
+      local canvas = love.graphics.newCanvas(outW, outH)
+      canvas:setFilter("nearest", "nearest")
       local frameImg = love.graphics.newImage(frameData)
       frameImg:setFilter("nearest", "nearest")
-
-      local canvas = love.graphics.newCanvas(BOX, BOX)
-      canvas:setFilter("nearest", "nearest")
       local quad = love.graphics.newQuad(bx, by, bw, bh, fw, fh)
-      local scale = math.min(targetW / bw, targetH / bh)
-      local dw, dh = bw * scale, bh * scale
-      local x = math.floor((BOX - dw) / 2 + 0.5)
-      local y = math.floor(groundY - dh + 0.5)
 
       local old = love.graphics.getCanvas()
       love.graphics.setCanvas(canvas)
       love.graphics.clear(0, 0, 0, 0)
       love.graphics.setColor(1, 1, 1, 1)
-      love.graphics.draw(frameImg, quad, x, y, 0, scale, scale)
+      love.graphics.draw(frameImg, quad, 0, 0, 0, scale, scale)
       love.graphics.setCanvas(old)
       frames[#frames + 1] = canvas
     end
@@ -214,7 +220,7 @@ return function(mod)
     local frames = framesFor(slot, back, shiny == true)
     local img = currentFrame(frames)
     if not img then return nil end
-    return { image = img, w = BOX, h = BOX, trueColor = true }
+    local w, h = img:getDimensions()\n    return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
   end
 
   Pokemon.frontPic = function(slot, form, shiny, personality)
