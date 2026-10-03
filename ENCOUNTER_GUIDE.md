@@ -358,6 +358,10 @@ Duplicates affect weighting internally but are collapsed here. All listed specie
 | --- | --- | --- |
 | Kangaskhan (#115), Rhyhorn (#111), Tauros (#128), Slowpoke (#79) | Kangaskhan (#115), Rhyhorn (#111), Tauros (#128), Slowpoke (#79) | Kangaskhan (#115), Tauros (#128), Sneasel (#215), Murkrow (#198) |
 
+## Regional Commons
+
+In addition to one-per-family coverage, common Hoenn and Sinnoh species recur across multiple suitable Kanto routes so they behave like ordinary regional fauna rather than checklist encounters. This includes **Poochyena, Zigzagoon, Wurmple, Silcoon, Cascoon, Shroomish, Electrike, Starly, Bidoof, Kricketot, and Shinx**. Starly is primarily a morning/day bird, Poochyena is biased toward night, bugs and Shroomish favor wooded areas, and Electrike/Shinx are concentrated around Route 10.
+
 ## Surf & Fishing
 
 Fishing slots follow FireRed: Old Rod 1–2, Good Rod 3–5, Super Rod 6–10.
