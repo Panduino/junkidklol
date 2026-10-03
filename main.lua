@@ -254,7 +254,14 @@ return function(mod)
         -- Shift the player/back battler another 12 px left from the authored platform
         -- anchor to open space between it and the right-side HUD: -28,-6
         -- while retaining G9's species-specific back metric.
-        and (-6 + math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5))
+        and (function()
+          -- Preserve the proven-good G9 back placement range (Bidoof is
+          -- by=15). Larger authored by values over-drop trimmed Gen3 backs,
+          -- because their original sheet padding has already been removed.
+          local by = (metric and tonumber(metric.by)) or 0
+          local normalBy = math.min(by, 15)
+          return -6 + math.floor(normalBy * 0.5 + 0.5)
+        end)()
         or (function()
           -- Ground the trimmed front image on one stable authored enemy
           -- contact point, then apply G9's own per-species front Y metric.
