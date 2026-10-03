@@ -773,15 +773,14 @@ return function(mod)
     local Message = require("src.ui.game3.message")
     local GfxIds = require("src.core.game3.scripting.gfx_ids")
 
-    -- Darkrai and Cresselia are authored as stationary EventObjects rather than
-    -- Untamed OWEs, so give just those actors Untamed's down-facing walk-frame
+    -- Stationary legendary EventObjects use Untamed's down-facing walk-frame
     -- alternation (frame 0/1) without changing their coordinates.
     if not Objects._rtcUntamedLegendIdleAnim then
       Objects._rtcUntamedLegendIdleAnim = true
       local rawObjectsUpdate = Objects.update
       Objects.update = function(game, ...)
         local result = rawObjectsUpdate(game, ...)
-        for _, lid in ipairs({126, 127}) do
+        for _, lid in ipairs({123, 124, 125, 126, 127, 128, 129}) do
           local actor = Objects._byId and Objects._byId[lid]
           if actor and actor._uadvIdleSheet and actor._uadvIdleRow then
             actor._uadvIdleTick = ((actor._uadvIdleTick or 0) + 1) % 32
