@@ -486,8 +486,8 @@ Fishing slots follow FireRed: Old Rod 1–2, Good Rod 3–5, Super Rod 6–10.
 
 | Pokémon | Current acquisition |
 | --- | --- |
-| Articuno / Zapdos / Moltres | Vanilla FireRed stationary encounters |
-| Mewtwo | Vanilla FireRed Cerulean Cave encounter |
+| Articuno / Zapdos / Moltres | Vanilla FireRed stationary encounters — Articuno: Seafoam Islands; Zapdos: Power Plant; Moltres: Mt. Ember |
+| Mewtwo | Vanilla FireRed stationary encounter — Cerulean Cave, postgame after the Sevii Network Machine quest |
 | Mew | Custom truck event, Lv. 50 |
 | Raikou / Entei / Suicune | Custom roaming system; all three can coexist |
 | Lugia / Ho-Oh | Navel Rock via MYSTICTICKET |
@@ -691,13 +691,13 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 141 | Kabutops | Evolution/breeding family: Kabuto — Route 23 (Surf) |
 | 142 | Aerodactyl| Old Amber → revive at the Cinnabar Island Pokémon Lab |
 | 143 | Snorlax | Route 12 (day) |
-| 144 | Articuno | Vanilla stationary |
-| 145 | Zapdos | Vanilla stationary |
-| 146 | Moltres | Vanilla stationary |
+| 144 | Articuno | Vanilla FireRed — Seafoam Islands, stationary Lv. 50 encounter |
+| 145 | Zapdos | Vanilla FireRed — Power Plant, stationary Lv. 50 encounter |
+| 146 | Moltres | Vanilla FireRed — Mt. Ember on One Island, stationary Lv. 50 encounter |
 | 147 | Dratini | Route 3 (day) |
 | 148 | Dragonair | Evolution/breeding family: Dratini — Route 3 (day) |
 | 149 | Dragonite | Evolution/breeding family: Dratini — Route 3 (day) |
-| 150 | Mewtwo | Cerulean Cave |
+| 150 | Mewtwo | Vanilla FireRed — Cerulean Cave, stationary Lv. 70 encounter; available after the Sevii Network Machine quest |
 | 151 | Mew | Truck event |
 | 152 | Chikorita | Route 2 (night) |
 | 153 | Bayleef | Evolution/breeding family: Chikorita — Route 2 (night) |
@@ -993,7 +993,7 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 443 | Gible | Route 23 (morning) |
 | 444 | Gabite | Evolution/breeding family: Gible — Route 23 (morning) |
 | 445 | Garchomp | Evolution/breeding family: Gible — Route 23 (morning) |
-| 446 | Munchlax| Breed Snorlax while holding Full Incense — Snorlax is available through FireRed's stationary encounters |
+| 446 | Munchlax | Breed Snorlax while holding Full Incense — Snorlax is available from the vanilla FireRed stationary encounters on Routes 12 and 16 |
 | 447 | Riolu | Route 12 (morning); Cerulean Cave 1f (morning); Cerulean Cave 1f (day); … |
 | 448 | Lucario | Evolution/breeding family: Riolu — Route 12 (morning); Cerulean Cave 1f (morning); Cerulean Cave 1f (day); … |
 | 449 | Hippopotas | Route 23 (day) |
