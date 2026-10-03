@@ -916,8 +916,15 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
           end
           labels[#labels + 1], dests[#dests + 1] = "EXIT", 127
 
-          local Choice = require("src.ui.game3.choice")
-          Choice.multichoice(labels, function(sel)
+          local Adapters = require("src.core.game3.scripting.adapters")
+          local adapters = Adapters.host(mod)
+          local menuId = 0xF002
+          Multichoice.LISTS[menuId] = { labels = labels, count = #labels }
+          adapters.multichoice({
+            op = "multichoice",
+            [1] = 17, [2] = 2, [3] = menuId, [4] = 0,
+            count = #labels,
+          }, function(sel)
             local dest = dests[(tonumber(sel) or (#dests - 1)) + 1] or 127
             if dest == 127 then
               done(1)
