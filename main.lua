@@ -159,6 +159,39 @@ return function(mod)
     FR_ROUTE_4 = { night={158} },
   }
 
+  -- Recurring Hoenn/Sinnoh commons. Family coverage alone made these species
+  -- technically obtainable but too scarce to feel like normal regional fauna.
+  -- These additions deliberately recur across suitable routes while Kanto
+  -- species remain the backbone of each encounter table.
+  local REGIONAL_COMMONS = {
+    FR_ROUTE_1  = { morning={396,263}, day={396,263,399}, night={261,399} },
+    FR_ROUTE_2  = { morning={265,396}, day={265,396}, night={265,261} },
+    FR_ROUTE_3  = { morning={396,263}, day={396,263,399}, night={261,399} },
+    FR_ROUTE_4  = { morning={396}, day={396,399}, night={261} },
+    FR_ROUTE_5  = { morning={263,396}, day={263,396,399}, night={261,399} },
+    FR_ROUTE_6  = { morning={396,399}, day={396,399,263}, night={261,399} },
+    FR_ROUTE_7  = { morning={263}, day={263,399}, night={261,399} },
+    FR_ROUTE_8  = { morning={396}, day={396,399}, night={261,399} },
+    FR_ROUTE_9  = { morning={396,263}, day={396,263}, night={261} },
+    FR_ROUTE_10 = { morning={309,403}, day={309,403}, night={261,403} },
+    FR_ROUTE_11 = { morning={263,396}, day={263,396}, night={261} },
+    FR_ROUTE_12 = { morning={399,285}, day={399,285}, night={261} },
+    FR_ROUTE_13 = { morning={396,399}, day={396,399}, night={261} },
+    FR_ROUTE_14 = { morning={396,263}, day={396,263,399}, night={261} },
+    FR_ROUTE_15 = { morning={396,399}, day={396,399}, night={261} },
+    FR_ROUTE_16 = { morning={263}, day={263,399}, night={261} },
+    FR_ROUTE_17 = { morning={396,263}, day={396,263,399}, night={261} },
+    FR_ROUTE_18 = { morning={396,399}, day={396,399}, night={261} },
+    FR_ROUTE_22 = { morning={396,263}, day={396,263,399}, night={261,399} },
+    FR_ROUTE_24 = { morning={265,285,396}, day={265,285,396}, night={265,261} },
+    FR_ROUTE_25 = { morning={265,285,396}, day={265,285,396}, night={265,261} },
+    FR_VIRIDIAN_FOREST = {
+      morning={265,266,268,285,396,401},
+      day={265,266,268,285,396,401},
+      night={265,268,261,401}
+    },
+  }
+
   local PROFILE_BY_ID = {}
   for _, p in ipairs(PROFILES) do PROFILE_BY_ID[p.id] = p end
 
@@ -332,6 +365,14 @@ return function(mod)
       nat = progressionSpecies(nat, profile)
       if nat == 448 then nat = 447 end
       if nat == 376 then nat = 374 end
+      uniqueAppend(out, seen, entry(nat, profile.min, profile.max))
+    end
+
+    -- Common Hoenn/Sinnoh species intentionally recur instead of behaving like
+    -- one-location family-coverage entries.
+    local regional = REGIONAL_COMMONS[profile.id]
+    for _, nat in ipairs(regional and regional[period] or {}) do
+      nat = progressionSpecies(nat, profile)
       uniqueAppend(out, seen, entry(nat, profile.min, profile.max))
     end
 
