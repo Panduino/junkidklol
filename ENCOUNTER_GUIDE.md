@@ -928,9 +928,9 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 374 | Beldum | Cerulean Cave 1f (morning); Cerulean Cave 1f (day); Cerulean Cave 1f (night); … |
 | 375 | Metang | Evolution/breeding family: Beldum — Cerulean Cave 1f (morning); Cerulean Cave 1f (day); Cerulean Cave 1f (night); … |
 | 376 | Metagross | Evolution/breeding family: Beldum — Cerulean Cave 1f (morning); Cerulean Cave 1f (day); Cerulean Cave 1f (night); … |
-| 377 | Regirock | Not currently supplied by this compatibility mod |
-| 378 | Regice | Not currently supplied by this compatibility mod |
-| 379 | Registeel | Not currently supplied by this compatibility mod |
+| 377 | Regirock | Stationary Lv50 encounter in the center of Monean Chamber, Seven Island |ntly supplied by this compatibility mod |
+| 378 | Regice | Stationary Lv50 encounter at the top of the waterfall chamber in Icefall Cave, Four Island |ntly supplied by this compatibility mod |
+| 379 | Registeel | Stationary Lv50 encounter inside the Rocket Warehouse, Five Island |ntly supplied by this compatibility mod |
 | 380 | Latias | Not currently supplied by this compatibility mod |
 | 381 | Latios | Not currently supplied by this compatibility mod |
 | 382 | Kyogre | Not currently supplied by this compatibility mod |
