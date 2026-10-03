@@ -1,17 +1,16 @@
 {
-  "id": "rtc_untamed_nationaldex_compat",
-  "name": "RTC + Untamed + National Dex Compatibility",
+  "id": "g9_gen3_battle_sprites",
+  "name": "G9 Battle Sprites - Gen 3",
   "version": "0.1.0",
   "api": 2,
   "entry": "main.lua",
-  "profile": "overhaul",
-  "category": "GAMEPLAY",
-  "games": ["firered", "leafgreen"],
+  "profile": "content",
+  "category": "OTHER",
+  "games": ["gen3"],
+  "game_version": ">=0.3.14",
+  "priority": 275,
   "permissions": ["engine_internals"],
-  "priority": 120,
-  "dependencies": [],
-  "optional_dependencies": ["RealTimeClockTest", "untamed_advanced", "national_dex_gen3"],
-  "conflicts": [],
-  "description": "Compatibility layer for RealTimeClockTest, Untamed Advanced, and National Dex Gen 3. Replaces Untamed's visible wild encounter source with HGSS-style Kanto morning/day/night tables covering National Dex #1-493.",
-  "github": "Panduino/junkidklol"
+  "dependencies": ["g9-battle-sprites"],
+  "optional_dependencies": ["national_dex_gen3"],
+  "description": "FireRed/LeafGreen renderer adapter for G9 Battle Sprites, including National Dex Gen 3 species."
 }
