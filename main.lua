@@ -743,6 +743,62 @@ return function(mod)
     if not Field._fossilDealerInteractInstalled then
       Field.interact = function(game)
         local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+
+        local function liveVar(id)
+          local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
+          local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
+          if not okSpace or not okFlags or not Space or not Flags or not Space.store then return nil end
+          local ctx = Space.vm and Space.vm.ctx or nil
+          return Flags.getVar(Space.store, ctx, id)
+        end
+
+        -- After the S.S. Anne has sailed, talking directly to the ferry sailor
+        -- opens the old harbor again without changing the normal Seagallop triggers.
+        if session and session.map == "FR_VERMILION_CITY"
+            and liveVar(0x407E) == 3
+            and Player.cellX == 24 and Player.cellY == 32 and Player.facing == "down"
+            and not Field.isLocked() then
+          Field.lock("ss_anne_old_dock")
+          Message.show("The S.S. ANNE has sailed, but you can still visit the old dock.", function()
+            mod.world:warpTo("FR_SSANNE_EXTERIOR", 31, 6, "down")
+            Field.unlock("ss_anne_old_dock")
+          end)
+          return true
+        end
+
+        -- The truck is scenery on the eastern harbor strip. Its collision
+        -- footprint occupies these tiles, so interaction works from any side.
+        if session and session.map == "FR_SSANNE_EXTERIOR" and not Field.isLocked() then
+          local dx, dy = 0, 0
+          if Player.facing == "up" then dy = -1
+          elseif Player.facing == "down" then dy = 1
+          elseif Player.facing == "left" then dx = -1
+          elseif Player.facing == "right" then dx = 1 end
+          local tx, ty = Player.cellX + dx, Player.cellY + dy
+          if tx >= 55 and tx <= 57 and ty >= 2 and ty <= 3 then
+            local state = mysticTicketState and mysticTicketState(session) or nil
+            if not state then
+              session.modData = session.modData or {}
+              session.modData[mod.id] = session.modData[mod.id] or {}
+              state = session.modData[mod.id]
+            end
+            if state.mewCaught then
+              Message.show("It's an old truck.")
+              return true
+            end
+            Field.lock("mew_truck")
+            Message.show("Something is hiding under the truck!", function()
+              mod.world:startWildBattle(151, 30, function()
+                if session.dex and Dex and Dex.isCaught(session.dex, 151) then
+                  state.mewCaught = true
+                end
+                Field.unlock("mew_truck")
+              end)
+            end)
+            return true
+          end
+        end
+
         if labScientistAhead(session) and not Field.isLocked() then
           local state = extraFossilState(session)
           if state.pending then
