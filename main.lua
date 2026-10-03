@@ -863,8 +863,11 @@ return function(mod)
 
         -- After the Darkrai Tower event, two existing city NPCs hint at the
         -- Mt. Moon disturbance. Before that point their stock scripts run.
-        if session and cresseliaUnlocked(session) and not cresseliaCaught(session)
-            and not Field.isLocked() then
+        local cresseliaState = session and mysticTicketState(session) or nil
+        local cresseliaIsCaught = session and session.dex
+          and Dex.isCaught(session.dex, 488 + 64) == true
+        if session and cresseliaState and cresseliaState.darkraiTowerTriggered == true
+            and not cresseliaIsCaught and not Field.isLocked() then
           local dx, dy = 0, 0
           if Player.facing == "up" then dy=-1 elseif Player.facing == "down" then dy=1
           elseif Player.facing == "left" then dx=-1 elseif Player.facing == "right" then dx=1 end
