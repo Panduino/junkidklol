@@ -540,33 +540,35 @@ return function(mod)
         local CELEBI_SPECIES = Pokemon.speciesFromNational(CELEBI_NAT) or CELEBI_NAT
         local HEATRAN_NAT = 485
         local HEATRAN_SPECIES = Pokemon.speciesFromNational(HEATRAN_NAT)
-        local rawTick = Owe.tick
-        local rawWildArea = engine.wildArea
-        local inOweTick = false
+        local HEATRAN_MAP = "FR_MT_EMBER_RUBY_PATH_B5F"
 
-        local function currentRareMythical()
-          local id = tostring(engine.mapId and engine.mapId() or ""):upper()
-          if id:find("PATTERN_BUSH", 1, true) ~= nil
-              or id:find("PATTERNBUSH", 1, true) ~= nil then
-            return SHAYMIN_NAT, SHAYMIN_SPECIES, 50
-          end
-          if id:find("BERRY_FOREST", 1, true) ~= nil
-              or id:find("BERRYFOREST", 1, true) ~= nil then
-            return CELEBI_NAT, CELEBI_SPECIES, 50
-          end
-          if id == "FR_MT_EMBER_RUBY_PATH_B5F"
-              or id:find("MT_EMBER_RUBY_PATH_B5F", 1, true) ~= nil then
-            return HEATRAN_NAT, HEATRAN_SPECIES, 70
-          end
-          return nil, nil, nil
+        local rawTick = Owe.tick
+        local rawWildHeader = engine.wildHeader
+        local rawWildArea = engine.wildArea
+        local rawTerrainAt = engine.Encounters.terrainAt
+        local inOweTick = false
+        local heatranHeader = { land = { rate = 1, slots = {} } }
+        for i = 1, 12 do
+          heatranHeader.land.slots[i] = {
+            species = HEATRAN_SPECIES, minLevel = 70, maxLevel = 70
+          }
         end
 
-        local function mythicalCaught(species)
+        local function mapId()
+          return tostring(engine.mapId and engine.mapId() or ""):upper()
+        end
+
+        local function inHeatranRoom()
+          local id = mapId()
+          return id == HEATRAN_MAP or id:find("MT_EMBER_RUBY_PATH_B5F", 1, true) ~= nil
+        end
+
+        local function caught(species)
           local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
           return session and session.dex and Dex.isCaught(session.dex, species) == true
         end
 
-        local function mythicalActive(nat, species)
+        local function active(nat, species)
           for _, actor in ipairs(engine.actors or {}) do
             if actor and actor.active and actor.oweType
                 and (tonumber(actor.engineSpecies) == species
@@ -577,34 +579,63 @@ return function(mod)
           return false
         end
 
+        local function currentRare()
+          local id = mapId()
+          if id:find("PATTERN_BUSH", 1, true) ~= nil
+              or id:find("PATTERNBUSH", 1, true) ~= nil then
+            return SHAYMIN_NAT, SHAYMIN_SPECIES, 50
+          end
+          if id:find("BERRY_FOREST", 1, true) ~= nil
+              or id:find("BERRYFOREST", 1, true) ~= nil then
+            return CELEBI_NAT, CELEBI_SPECIES, 50
+          end
+          return nil, nil, nil
+        end
+
+        -- B5F has no vanilla wild header. Untamed checks wildHeader twice:
+        -- once at the top of Owe.tick and again while choosing species.
+        engine.wildHeader = function(...)
+          if inOweTick and inHeatranRoom() and not caught(HEATRAN_SPECIES)
+              and not active(HEATRAN_NAT, HEATRAN_SPECIES) then
+            return heatranHeader
+          end
+          return rawWildHeader(...)
+        end
+
         engine.wildArea = function(header, kind)
+          if inOweTick and inHeatranRoom() and header == heatranHeader and kind == "land"
+              and not caught(HEATRAN_SPECIES)
+              and not active(HEATRAN_NAT, HEATRAN_SPECIES) then
+            return heatranHeader.land.slots
+          end
+
           local slots = rawWildArea(header, kind)
-          local nat, species, level = currentRareMythical()
+          local nat, species, level = currentRare()
           if not inOweTick or kind ~= "land" or not species
-              or mythicalCaught(species) or mythicalActive(nat, species) then
+              or caught(species) or active(nat, species)
+              or type(slots) ~= "table" or #slots == 0 then
             return slots
           end
-
-          -- The Ruby chamber has no vanilla wild encounter table. Give
-          -- Untamed a synthetic land area there so its normal OWE generator
-          -- has something to spawn from; all slots are Heatran, but the
-          -- active-actor guard above caps it at one live Heatran.
-          if nat == HEATRAN_NAT then
-            local heatran = {}
-            for i = 1, 12 do
-              heatran[i] = { species = HEATRAN_SPECIES, minLevel = 70, maxLevel = 70 }
-            end
-            return heatran
-          end
-
-          if type(slots) ~= "table" or #slots == 0 then return slots end
           local rare = {}
           for i = 1, 12 do
-            local source = slots[i] or slots[#slots]
-            rare[i] = source
+            rare[i] = slots[i] or slots[#slots]
           end
-          rare[12] = { species = species, minLevel = level or 50, maxLevel = level or 50 }
+          rare[12] = { species = species, minLevel = level, maxLevel = level }
           return rare
+        end
+
+        -- B5F also has no wild-encounter metatiles. Untamed's tile selector
+        -- requires terrainAt(x,y) == "land". During its own tick only, treat
+        -- walkable Ruby-room floor as encounter land. Collision is still
+        -- checked separately by Untamed, so walls/objects cannot be selected.
+        engine.Encounters.terrainAt = function(x, y, ...)
+          local terrain = rawTerrainAt(x, y, ...)
+          if inOweTick and inHeatranRoom() and not caught(HEATRAN_SPECIES)
+              and not active(HEATRAN_NAT, HEATRAN_SPECIES)
+              and terrain ~= "water" then
+            return "land"
+          end
+          return terrain
         end
 
         Owe.tick = function(...)
