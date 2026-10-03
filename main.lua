@@ -379,6 +379,17 @@ return function(mod)
         and Healthbox.CENTERS[false][0] then
       Healthbox.CENTERS[false][0].y = 106
     end
+    -- Raise only the opposing/enemy healthbox 14 px from the engine's
+    -- existing authored position. Do this relatively so we do not hard-code
+    -- or disturb the player's already-adjusted healthbox.
+    if Healthbox.ENEMY_CENTER and type(Healthbox.ENEMY_CENTER.y) == "number" then
+      Healthbox.ENEMY_CENTER.y = Healthbox.ENEMY_CENTER.y - 14
+    end
+    if Healthbox.CENTERS and Healthbox.CENTERS[true]
+        and Healthbox.CENTERS[true][0]
+        and type(Healthbox.CENTERS[true][0].y) == "number" then
+      Healthbox.CENTERS[true][0].y = Healthbox.CENTERS[true][0].y - 14
+    end
   end
 
   -- Gen 3's stock battle renderer hard-codes a 32,32 origin because vanilla
