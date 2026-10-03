@@ -1,16 +1,24 @@
-# RTC + Untamed + National Dex Compatibility
+# Gen4Dex (RTC + Untamed + National Dex Compatibility)
 
 Compatibility mod for FireRed / LeafGreen that combines:
 
-- **RealTimeClockTest** for the three-part morning / day / night cycle.
-- **Untamed Advanced** for visible overworld wild Pokémon.
-- **National Dex Gen 3** for Gen 4 species and their FireRed-compatible species slots.
+- [Real Time Clock Test](https://github.com/PashleyAUS/Real-Time-Clock-for-FR-LG-Content-Editor-addon-showcase/tree/v0.1.0) for the three-part morning / day / night cycle.
+- [Untamed Advanced](https://github.com/goldenroddeptstore/Untamed-Advanced) for visible overworld wild Pokémon.
+- [National Dex Gen 3](https://github.com/poooooby/national_dex_gen3) for Gen 4 species and their FireRed-compatible species slots.
+
+All these mods are required for this one to work. I have not tested it otherwise.
+No sprites are supplied for gen 4's battle sprites. You will still need to source those yourself if you want a full proper experience.
 
 ## What it does
 
-The compatibility layer intercepts Untamed Advanced's wild-table lookup instead of replacing Untamed's overworld spawning system. Untamed still handles visible overworld Pokémon, spawn positions, movement, sprites, despawning, wild battles, repel checks, and shiny/personality generation.
+The compatibility layer intercepts Untamed Advanced's wild table lookup instead of replacing Untamed's overworld spawning system. Untamed still handles visible overworld Pokémon, spawn positions, movement, sprites, despawning, wild battles, repel checks, and shiny/personality generation.
 
-The compatibility layer supplies the species/level table that Untamed asks for.
+In addition, events have been and are slowly being added for all legendaries up to gen 4, excluding Hoenn legendaries.
+Navel Rock and Birth Island are implemented, you can get the Mystic Ticket from Celio after catching the legendary beasts and the legendary birds. He will also give you the aurora ticket if you have Rayquaza in your pokedex. All legendary beasts roam instead of the one that corresponds to your starter now as well.
+
+Darkrai is waiting at the top of the Pokemon Tower post-champion, only at night. Once you approach him he will become a roamer at night.
+
+More will be implemented, with plans for a recreation of HG/SS's Sinjoh Ruins to get Arceus, Dialga, Giratina, and Palkia. Gen 3 Legendaries should be sourced from Emerald, and are being intentionally left out (except for Deoxys) to make room for an eventual Hoenn expansion, whether it is I or someone else that makes it.
 
 ### Time of day
 
@@ -33,19 +41,12 @@ The Kanto tables are inspired by HeartGold/SoulSilver rather than simply copying
 3. **Progression** — level ranges rise with the route and late-game areas have the broadest National Dex access.
 4. **Common-species persistence** — Pidgey, Rattata, Spearow, Zubat and other Kanto staples intentionally occur on multiple routes instead of being artificially restricted to one table.
 5. **National Dex coverage** — every species #1–493 is assigned a habitat family and an eligible Kanto map/time slot. Ordinary slots are then filled with HGSS-style common species and habitat matches around those coverage slots.
+## Installation
 
-The result is intentionally **HGSS-inspired rather than a byte-for-byte recreation of HGSS's encounter data**. Gen 3's overworld spawning model and the expanded National Dex require a larger pool than the original HGSS tables.
+Install all three dependencies alongside this compatibility mod:
+- [Real Time Clock Test](https://github.com/PashleyAUS/Real-Time-Clock-for-FR-LG-Content-Editor-addon-showcase)
+- [Untamed Advanced](https://github.com/goldenroddeptstore/Untamed-Advanced)
+- [National Dex Gen 3](https://github.com/poooooby/national_dex_gen3)
 
-## Requirements
-
-Install all three source mods alongside this compatibility mod:
-
-- RealTimeClockTest
-- Untamed Advanced
-- National Dex Gen 3
 
 The compatibility mod does not modify those source mods.
-
-## Important
-
-The Real-Time Clock showcase currently declares FireRed in its manifest. The compatibility layer declares both FireRed and LeafGreen and mirrors the RTC clock periods for its encounter selection. LeafGreen therefore requires a version of the RTC component that actually loads on LeafGreen.
