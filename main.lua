@@ -266,12 +266,10 @@ return function(mod)
       love.graphics.draw = function(drawable, x, y, r, sx, sy, ox, oy, ...)
         local meta = imageMeta[drawable]
         if meta then
-          local iw, ih = drawable:getDimensions()
           x = (x or 0) + (meta.ox or 0)
           y = (y or 0) + (meta.oy or 0)
-          -- G9 natural-mode frames are not 64x64. Their true centre must be
-          -- the origin; FireRed's 32,32 origin is only valid for vanilla art.
-          ox, oy = iw / 2, ih / 2
+          -- Keep Gen 3's native 32,32 sampling/origin.  Replacing this with
+          -- the trimmed image centre made front sprites look resampled/soft.
         end
         return realDraw(drawable, x, y, r, sx, sy, ox, oy, ...)
       end
