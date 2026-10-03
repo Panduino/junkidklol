@@ -241,12 +241,12 @@ return function(mod)
     -- lowered individually instead of moving every enemy by the same amount.
     imageMeta[img] = {
       drawScale = back and (frames._g9DrawScale or 1) or 1,
-      g9Back = back,
+      g9Trimmed = true,
       -- Keep the scene correction, but also respect G9's authored back
       -- placement instead of centering every species identically.
       ox = back
         and (-22 + math.floor(((metric and tonumber(metric.bx)) or 0) * 0.5 + 0.5))
-        or 2,
+        or (2 + math.floor(((metric and tonumber(metric.fx)) or 0) * 0.5 + 0.5)),
       -- Natural G9 fronts are grounded by their trimmed bottom edge, then use
       -- G9's per-species front Y metric. FireRed's centre-origin draw needs the
       -- equivalent correction based on this frame's actual height.
@@ -263,18 +263,7 @@ return function(mod)
           local normalBy = math.min(by, 15)
           return -6 + math.floor(normalBy * 0.5 + 0.5)
         end)()
-        or (function()
-          -- Ground the trimmed front image on one stable authored enemy
-          -- contact point, then apply G9's own per-species front Y metric.
-          -- Do not invent a percentage-height lift for flying species:
-          -- dbk_metrics already describes their intended battle placement.
-          local fy = (metric and tonumber(metric.fy)) or 0
-          -- Bidoof (fy=6) is the verified visual reference for this scene.
-          -- G9's lower fy values represent fronts that belong progressively
-          -- higher relative to that contact point.
-          local base = 32 - (h / 2) + 17
-          return math.floor(base - (6 - fy) * 2 + 0.5)
-        end)(),
+        or (14 + math.floor(((metric and tonumber(metric.fy)) or 0) * 0.5 + 0.5)),
     }
     return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
   end
@@ -402,7 +391,7 @@ return function(mod)
           -- G9 frames are union-trimmed canvases, not FireRed's fixed 64x64
           -- pictures. Center each trimmed image on the battler anchor instead
           -- of retaining the native hard-coded 32,32 origin.
-          if meta.g9Back then
+          if meta.g9Trimmed then
             local iw, ih = drawable:getDimensions()
             ox = iw * 0.5
             oy = ih * 0.5
