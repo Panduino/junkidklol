@@ -581,11 +581,23 @@ return function(mod)
           local slots = rawWildArea(header, kind)
           local nat, species, level = currentRareMythical()
           if not inOweTick or kind ~= "land" or not species
-              or mythicalCaught(species) or mythicalActive(nat, species)
-              or type(slots) ~= "table" or #slots == 0 then
+              or mythicalCaught(species) or mythicalActive(nat, species) then
             return slots
           end
 
+          -- The Ruby chamber has no vanilla wild encounter table. Give
+          -- Untamed a synthetic land area there so its normal OWE generator
+          -- has something to spawn from; all slots are Heatran, but the
+          -- active-actor guard above caps it at one live Heatran.
+          if nat == HEATRAN_NAT then
+            local heatran = {}
+            for i = 1, 12 do
+              heatran[i] = { species = HEATRAN_SPECIES, minLevel = 70, maxLevel = 70 }
+            end
+            return heatran
+          end
+
+          if type(slots) ~= "table" or #slots == 0 then return slots end
           local rare = {}
           for i = 1, 12 do
             local source = slots[i] or slots[#slots]
