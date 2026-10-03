@@ -117,34 +117,63 @@ return function(mod)
     return ok and info and info.type == "file"
   end
 
-  local function bakeSheet(path)
-    if not (love and love.graphics) then return nil end
-    local ok, sheet = pcall(love.graphics.newImage, path)
-    if not ok or not sheet then return nil end
-    sheet:setFilter("nearest", "nearest")
+  local function opaqueBounds(data)
+    local w, h = data:getDimensions()
+    local minX, minY, maxX, maxY = w, h, -1, -1
+    for y = 0, h - 1 do
+      for x = 0, w - 1 do
+        local _, _, _, a = data:getPixel(x, y)
+        if a and a > 0.01 then
+          if x < minX then minX = x end
+          if y < minY then minY = y end
+          if x > maxX then maxX = x end
+          if y > maxY then maxY = y end
+        end
+      end
+    end
+    if maxX < minX then return 0, 0, w, h end
+    return minX, minY, maxX - minX + 1, maxY - minY + 1
+  end
 
-    local sw, sh = sheet:getDimensions()
-    -- DBK solo sheets are horizontal strips whose frames are square: the
-    -- sheet height is one frame's width/height.
+  local function bakeSheet(path, back)
+    if not (love and love.graphics and love.image) then return nil end
+    local okData, sheetData = pcall(love.image.newImageData, path)
+    if not okData or not sheetData then return nil end
+
+    local sw, sh = sheetData:getDimensions()
+    -- DBK solo sheets are horizontal strips of square source frames.
     local fw, fh = sh, sh
     if fw <= 0 or sw < fw then return nil end
     local count = math.max(1, math.floor(sw / fw + 0.0001))
     local frames = {}
 
+    -- G9's own pack is authored at different front/back scales.  More
+    -- importantly, G9 sizes the visible Pokemon, not the transparent source
+    -- frame.  Crop each frame to its opaque content before fitting it.
+    local targetH = back and 62 or 52
+    local targetW = back and 62 or 54
+    local groundY = back and 64 or 57
+
     for i = 0, count - 1 do
+      local frameData = love.image.newImageData(fw, fh)
+      frameData:paste(sheetData, 0, 0, i * fw, 0, fw, fh)
+      local bx, by, bw, bh = opaqueBounds(frameData)
+      local frameImg = love.graphics.newImage(frameData)
+      frameImg:setFilter("nearest", "nearest")
+
       local canvas = love.graphics.newCanvas(BOX, BOX)
       canvas:setFilter("nearest", "nearest")
-      local quad = love.graphics.newQuad(i * fw, 0, fw, fh, sw, sh)
-      local scale = math.min(1, BOX / fw, BOX / fh)
-      local dw, dh = fw * scale, fh * scale
+      local quad = love.graphics.newQuad(bx, by, bw, bh, fw, fh)
+      local scale = math.min(targetW / bw, targetH / bh)
+      local dw, dh = bw * scale, bh * scale
       local x = math.floor((BOX - dw) / 2 + 0.5)
-      local y = math.floor(BOX - dh + 0.5)
+      local y = math.floor(groundY - dh + 0.5)
 
       local old = love.graphics.getCanvas()
       love.graphics.setCanvas(canvas)
       love.graphics.clear(0, 0, 0, 0)
       love.graphics.setColor(1, 1, 1, 1)
-      love.graphics.draw(sheet, quad, x, y, 0, scale, scale)
+      love.graphics.draw(frameImg, quad, x, y, 0, scale, scale)
       love.graphics.setCanvas(old)
       frames[#frames + 1] = canvas
     end
@@ -168,7 +197,7 @@ return function(mod)
       cache[key] = false
       return nil
     end
-    local frames = bakeSheet(path)
+    local frames = bakeSheet(path, back)
     cache[key] = frames or false
     return frames
   end
