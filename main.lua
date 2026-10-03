@@ -1673,138 +1673,107 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
 
     -- Regi trio: stationary Sevii encounters. They are always present once
     -- their locations are reachable and disappear permanently only when caught.
-    -- Regirock / Regice / Registeel / Regigigas / Heatran use the exact same
-    -- one-actor stationary EventObject lifecycle as the working Cresselia scene.
-    local STATIONARY_LEGENDS = {
-      { nat=378, species=Pokemon.speciesFromNational(378), map="FR_FOUR_ISLAND_ICEFALL_CAVE_BACK", x=12, y=8, id=123, level=50, tick=0 },
-      { nat=379, species=Pokemon.speciesFromNational(379), map="FR_FIVE_ISLAND_ROCKET_WAREHOUSE", x=13, y=8, id=124, level=50, tick=7 },
-      { nat=377, species=Pokemon.speciesFromNational(377), map="FR_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER", x=11, y=8, id=125, level=50, tick=14 },
-      { nat=486, species=Pokemon.speciesFromNational(486), map="FR_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM", x=7, y=5, id=128, level=70, tick=5, gate="regigigas" },
-      { nat=485, species=Pokemon.speciesFromNational(485), map="FR_MT_EMBER_RUBY_PATH_B5F", x=7, y=5, id=129, level=70, tick=11, gate="heatran" },
-    }
-
-    local stationaryActor = nil
-    local stationaryDef = nil
-    local stationaryBusy = false
-
-    local function clearStationaryLegend()
-      if stationaryDef and Objects._byId and Objects._byId[stationaryDef.id] then
-        Objects._byId[stationaryDef.id] = nil
-        for i = #(Objects._order or {}), 1, -1 do
-          if Objects._order[i] == stationaryDef.id then table.remove(Objects._order, i) end
-        end
-      end
-      stationaryActor = nil
-      stationaryDef = nil
-    end
-
-    local function stationaryCaught(session, def)
-      return session and session.dex and def.species
-        and Dex.isCaught(session.dex, def.species) == true
-    end
-
-    local function storyFlag(name)
+    local function stationaryStoryFlag(name)
       local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
       local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
       return okSpace and okFlags and Space and Space.store and Flags
         and Flags.getFlag(Space.store, nil, name) == true
     end
 
-    local function hasKeyItem(session, item)
+    local function stationaryHasItem(session, item)
       if not session or not session.bag then return false end
       local okBag, Bag = pcall(require, "src.core.game3.bag")
       return okBag and Bag and type(Bag.has) == "function"
         and Bag.has(session.bag, item, 1) == true
     end
 
-    local function stationaryUnlocked(session, def)
-      if def.gate == "heatran" then
-        -- Reaching Ruby Path B5F is sufficient. The chamber is only accessible
-        -- through the Ruby quest path, so do not add a second flag/item gate
-        -- that can incorrectly suppress this stationary encounter.
-        return true
+    -- These stationary legends intentionally duplicate Cresselia's proven
+    -- one-actor clear/show/trigger lifecycle. Do not fold them back into a
+    -- shared encounter loop: independent state is part of the working path.
+
+    local REGICE_SPECIES = Pokemon.speciesFromNational(378)
+    local REGICE_MAP = "FR_FOUR_ISLAND_ICEFALL_CAVE_BACK"
+    local REGICE_NPC_ID = 123
+    local regiceActor = nil
+    local regiceBusy = false
+
+    local function clearRegiceActor()
+      if Objects._byId and Objects._byId[REGICE_NPC_ID] then
+        Objects._byId[REGICE_NPC_ID] = nil
+        for i = #(Objects._order or {}), 1, -1 do
+          if Objects._order[i] == REGICE_NPC_ID then table.remove(Objects._order, i) end
+        end
       end
-      if def.gate == "regigigas" then
-        if not session or not session.dex then return false end
-        local trio = Dex.isCaught(session.dex, Pokemon.speciesFromNational(377)) == true
-          and Dex.isCaught(session.dex, Pokemon.speciesFromNational(378)) == true
-          and Dex.isCaught(session.dex, Pokemon.speciesFromNational(379)) == true
-        return trio and (storyFlag("FLAG_RECOVERED_SAPPHIRE") or hasKeyItem(session, 374))
-      end
-      return true
+      regiceActor = nil
     end
 
-    local function stationaryForMap(map)
-      for _, def in ipairs(STATIONARY_LEGENDS) do
-        if def.map == map then return def end
-      end
-      return nil
+    local function regiceCaught(session)
+      return session and session.dex and REGICE_SPECIES
+        and Dex.isCaught(session.dex, REGICE_SPECIES) == true
     end
 
-    local function showStationaryLegend()
+    local function showRegice()
       local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-      local def = session and stationaryForMap(session.map)
-      local shouldShow = def and def.species and stationaryUnlocked(session, def)
-        and not stationaryCaught(session, def) and not stationaryBusy
-      if not shouldShow then clearStationaryLegend(); return end
-      if stationaryActor and stationaryDef == def and Objects._byId
-        and Objects._byId[def.id] == stationaryActor then return end
-      clearStationaryLegend()
+      local shouldShow = session and session.map == REGICE_MAP
+        and (true)
+        and not regiceCaught(session) and not regiceBusy
+      if not shouldShow then clearRegiceActor(); return end
+      if regiceActor and Objects._byId and Objects._byId[REGICE_NPC_ID] == regiceActor then return end
+      clearRegiceActor()
       if not Objects._byId or not Objects._order then return end
 
       local personality = engine.random32 and engine.random32() or 0
-      local atlasSpecies = engine.expansionSpecies(def.species, personality)
+      local atlasSpecies = engine.expansionSpecies(REGICE_SPECIES, personality)
       if not atlasSpecies then return end
-      local female = engine.femaleFor and engine.femaleFor(def.species, personality) or false
+      local female = engine.femaleFor and engine.femaleFor(REGICE_SPECIES, personality) or false
       local sheet, row = engine.Gfx.sheetFor(atlasSpecies, female, false)
       if not sheet then return end
       local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
-      local elevation = engine.elevationAt and engine.elevationAt(def.x, def.y) or 3
+      local x, y = 12, 8
+      local elevation = engine.elevationAt and engine.elevationAt(x, y) or 3
       local actor = {
-        active=true, localId=def.id, originLocalId=def.id,
-        originMapId=session.map, cellX=def.x, cellY=def.y, px=def.x*16, py=def.y*16,
-        homeX=def.x, homeY=def.y, targetX=def.x, targetY=def.y,
+        active=true, localId=REGICE_NPC_ID, originLocalId=REGICE_NPC_ID,
+        originMapId=session.map, cellX=x, cellY=y, px=x*16, py=y*16,
+        homeX=x, homeY=y, targetX=x, targetY=y,
         facing="down", sprite=graphicsId, graphicsId=graphicsId,
         elevation=elevation, currentElevation=elevation,
         movementType=0x09, movement="STAY", range="DOWN",
         radius={x=0,y=0}, rangeX=0, rangeY=0,
         visible=true, hidden=false, invisible=false, frozen=true,
         passable=false, moving=false, progress=0, stepFrames=16,
-        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=def.tick,
-        def={ localId=def.id, x=def.x, y=def.y, graphicsId=graphicsId,
+        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=0,
+        def={ localId=REGICE_NPC_ID, x=x, y=y, graphicsId=graphicsId,
           movementType=0x09, facing="down" },
       }
-      Objects._byId[def.id] = actor
-      Objects._order[#Objects._order + 1] = def.id
-      stationaryActor = actor
-      stationaryDef = def
+      Objects._byId[REGICE_NPC_ID] = actor
+      Objects._order[#Objects._order + 1] = REGICE_NPC_ID
+      regiceActor = actor
     end
 
-    local function triggerStationaryLegend()
-      if not stationaryActor or not stationaryActor.active or stationaryBusy or not stationaryDef then return false end
+    local function triggerRegice()
+      if not regiceActor or not regiceActor.active or regiceBusy then return false end
       local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-      local def = stationaryDef
-      if not session or session.map ~= def.map then return false end
+      if not session or session.map ~= REGICE_MAP then return false end
       local P = engine.Player
-      local distance = math.abs(P.cellX - stationaryActor.cellX) + math.abs(P.cellY - stationaryActor.cellY)
+      local distance = math.abs(P.cellX - regiceActor.cellX) + math.abs(P.cellY - regiceActor.cellY)
       if distance ~= 1 then return false end
 
       local Fade = require("src.ui.game3.fade")
-      stationaryBusy = true
+      regiceBusy = true
       engine.Field.locked = true
-      if P.cellX < stationaryActor.cellX then P.facing = "right"
-      elseif P.cellX > stationaryActor.cellX then P.facing = "left"
-      elseif P.cellY < stationaryActor.cellY then P.facing = "down"
+      if P.cellX < regiceActor.cellX then P.facing = "right"
+      elseif P.cellX > regiceActor.cellX then P.facing = "left"
+      elseif P.cellY < regiceActor.cellY then P.facing = "down"
       else P.facing = "up" end
 
       local toWhite = Fade.MODE and (Fade.MODE.TO_WHITE or Fade.MODE.WHITE)
       local fromWhite = Fade.MODE and (Fade.MODE.FROM_WHITE or Fade.MODE.WHITE_IN)
       local function battle()
-        clearStationaryLegend()
-        mod.world:startWildBattle(def.species, def.level, function()
+        clearRegiceActor()
+        mod.world:startWildBattle(REGICE_SPECIES, 50, function()
           engine.Field.locked = false
-          stationaryBusy = false
-          if not stationaryCaught(session, def) then clearStationaryLegend() end
+          regiceBusy = false
+          if not regiceCaught(session) then clearRegiceActor() end
         end)
       end
       if toWhite and fromWhite then
@@ -1817,6 +1786,389 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       return true
     end
 
+    local REGISTEEL_SPECIES = Pokemon.speciesFromNational(379)
+    local REGISTEEL_MAP = "FR_FIVE_ISLAND_ROCKET_WAREHOUSE"
+    local REGISTEEL_NPC_ID = 124
+    local registeelActor = nil
+    local registeelBusy = false
+
+    local function clearRegisteelActor()
+      if Objects._byId and Objects._byId[REGISTEEL_NPC_ID] then
+        Objects._byId[REGISTEEL_NPC_ID] = nil
+        for i = #(Objects._order or {}), 1, -1 do
+          if Objects._order[i] == REGISTEEL_NPC_ID then table.remove(Objects._order, i) end
+        end
+      end
+      registeelActor = nil
+    end
+
+    local function registeelCaught(session)
+      return session and session.dex and REGISTEEL_SPECIES
+        and Dex.isCaught(session.dex, REGISTEEL_SPECIES) == true
+    end
+
+    local function showRegisteel()
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      local shouldShow = session and session.map == REGISTEEL_MAP
+        and (true)
+        and not registeelCaught(session) and not registeelBusy
+      if not shouldShow then clearRegisteelActor(); return end
+      if registeelActor and Objects._byId and Objects._byId[REGISTEEL_NPC_ID] == registeelActor then return end
+      clearRegisteelActor()
+      if not Objects._byId or not Objects._order then return end
+
+      local personality = engine.random32 and engine.random32() or 0
+      local atlasSpecies = engine.expansionSpecies(REGISTEEL_SPECIES, personality)
+      if not atlasSpecies then return end
+      local female = engine.femaleFor and engine.femaleFor(REGISTEEL_SPECIES, personality) or false
+      local sheet, row = engine.Gfx.sheetFor(atlasSpecies, female, false)
+      if not sheet then return end
+      local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
+      local x, y = 13, 8
+      local elevation = engine.elevationAt and engine.elevationAt(x, y) or 3
+      local actor = {
+        active=true, localId=REGISTEEL_NPC_ID, originLocalId=REGISTEEL_NPC_ID,
+        originMapId=session.map, cellX=x, cellY=y, px=x*16, py=y*16,
+        homeX=x, homeY=y, targetX=x, targetY=y,
+        facing="down", sprite=graphicsId, graphicsId=graphicsId,
+        elevation=elevation, currentElevation=elevation,
+        movementType=0x09, movement="STAY", range="DOWN",
+        radius={x=0,y=0}, rangeX=0, rangeY=0,
+        visible=true, hidden=false, invisible=false, frozen=true,
+        passable=false, moving=false, progress=0, stepFrames=16,
+        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=7,
+        def={ localId=REGISTEEL_NPC_ID, x=x, y=y, graphicsId=graphicsId,
+          movementType=0x09, facing="down" },
+      }
+      Objects._byId[REGISTEEL_NPC_ID] = actor
+      Objects._order[#Objects._order + 1] = REGISTEEL_NPC_ID
+      registeelActor = actor
+    end
+
+    local function triggerRegisteel()
+      if not registeelActor or not registeelActor.active or registeelBusy then return false end
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      if not session or session.map ~= REGISTEEL_MAP then return false end
+      local P = engine.Player
+      local distance = math.abs(P.cellX - registeelActor.cellX) + math.abs(P.cellY - registeelActor.cellY)
+      if distance ~= 1 then return false end
+
+      local Fade = require("src.ui.game3.fade")
+      registeelBusy = true
+      engine.Field.locked = true
+      if P.cellX < registeelActor.cellX then P.facing = "right"
+      elseif P.cellX > registeelActor.cellX then P.facing = "left"
+      elseif P.cellY < registeelActor.cellY then P.facing = "down"
+      else P.facing = "up" end
+
+      local toWhite = Fade.MODE and (Fade.MODE.TO_WHITE or Fade.MODE.WHITE)
+      local fromWhite = Fade.MODE and (Fade.MODE.FROM_WHITE or Fade.MODE.WHITE_IN)
+      local function battle()
+        clearRegisteelActor()
+        mod.world:startWildBattle(REGISTEEL_SPECIES, 50, function()
+          engine.Field.locked = false
+          registeelBusy = false
+          if not registeelCaught(session) then clearRegisteelActor() end
+        end)
+      end
+      if toWhite and fromWhite then
+        Fade.begin(toWhite, 1, function()
+          Fade.begin(fromWhite, 1, battle)
+        end)
+      else
+        battle()
+      end
+      return true
+    end
+
+    local REGIROCK_SPECIES = Pokemon.speciesFromNational(377)
+    local REGIROCK_MAP = "FR_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER"
+    local REGIROCK_NPC_ID = 125
+    local regirockActor = nil
+    local regirockBusy = false
+
+    local function clearRegirockActor()
+      if Objects._byId and Objects._byId[REGIROCK_NPC_ID] then
+        Objects._byId[REGIROCK_NPC_ID] = nil
+        for i = #(Objects._order or {}), 1, -1 do
+          if Objects._order[i] == REGIROCK_NPC_ID then table.remove(Objects._order, i) end
+        end
+      end
+      regirockActor = nil
+    end
+
+    local function regirockCaught(session)
+      return session and session.dex and REGIROCK_SPECIES
+        and Dex.isCaught(session.dex, REGIROCK_SPECIES) == true
+    end
+
+    local function showRegirock()
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      local shouldShow = session and session.map == REGIROCK_MAP
+        and (true)
+        and not regirockCaught(session) and not regirockBusy
+      if not shouldShow then clearRegirockActor(); return end
+      if regirockActor and Objects._byId and Objects._byId[REGIROCK_NPC_ID] == regirockActor then return end
+      clearRegirockActor()
+      if not Objects._byId or not Objects._order then return end
+
+      local personality = engine.random32 and engine.random32() or 0
+      local atlasSpecies = engine.expansionSpecies(REGIROCK_SPECIES, personality)
+      if not atlasSpecies then return end
+      local female = engine.femaleFor and engine.femaleFor(REGIROCK_SPECIES, personality) or false
+      local sheet, row = engine.Gfx.sheetFor(atlasSpecies, female, false)
+      if not sheet then return end
+      local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
+      local x, y = 11, 8
+      local elevation = engine.elevationAt and engine.elevationAt(x, y) or 3
+      local actor = {
+        active=true, localId=REGIROCK_NPC_ID, originLocalId=REGIROCK_NPC_ID,
+        originMapId=session.map, cellX=x, cellY=y, px=x*16, py=y*16,
+        homeX=x, homeY=y, targetX=x, targetY=y,
+        facing="down", sprite=graphicsId, graphicsId=graphicsId,
+        elevation=elevation, currentElevation=elevation,
+        movementType=0x09, movement="STAY", range="DOWN",
+        radius={x=0,y=0}, rangeX=0, rangeY=0,
+        visible=true, hidden=false, invisible=false, frozen=true,
+        passable=false, moving=false, progress=0, stepFrames=16,
+        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=14,
+        def={ localId=REGIROCK_NPC_ID, x=x, y=y, graphicsId=graphicsId,
+          movementType=0x09, facing="down" },
+      }
+      Objects._byId[REGIROCK_NPC_ID] = actor
+      Objects._order[#Objects._order + 1] = REGIROCK_NPC_ID
+      regirockActor = actor
+    end
+
+    local function triggerRegirock()
+      if not regirockActor or not regirockActor.active or regirockBusy then return false end
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      if not session or session.map ~= REGIROCK_MAP then return false end
+      local P = engine.Player
+      local distance = math.abs(P.cellX - regirockActor.cellX) + math.abs(P.cellY - regirockActor.cellY)
+      if distance ~= 1 then return false end
+
+      local Fade = require("src.ui.game3.fade")
+      regirockBusy = true
+      engine.Field.locked = true
+      if P.cellX < regirockActor.cellX then P.facing = "right"
+      elseif P.cellX > regirockActor.cellX then P.facing = "left"
+      elseif P.cellY < regirockActor.cellY then P.facing = "down"
+      else P.facing = "up" end
+
+      local toWhite = Fade.MODE and (Fade.MODE.TO_WHITE or Fade.MODE.WHITE)
+      local fromWhite = Fade.MODE and (Fade.MODE.FROM_WHITE or Fade.MODE.WHITE_IN)
+      local function battle()
+        clearRegirockActor()
+        mod.world:startWildBattle(REGIROCK_SPECIES, 50, function()
+          engine.Field.locked = false
+          regirockBusy = false
+          if not regirockCaught(session) then clearRegirockActor() end
+        end)
+      end
+      if toWhite and fromWhite then
+        Fade.begin(toWhite, 1, function()
+          Fade.begin(fromWhite, 1, battle)
+        end)
+      else
+        battle()
+      end
+      return true
+    end
+
+    local REGIGIGAS_SPECIES = Pokemon.speciesFromNational(486)
+    local REGIGIGAS_MAP = "FR_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM"
+    local REGIGIGAS_NPC_ID = 128
+    local regigigasActor = nil
+    local regigigasBusy = false
+
+    local function clearRegigigasActor()
+      if Objects._byId and Objects._byId[REGIGIGAS_NPC_ID] then
+        Objects._byId[REGIGIGAS_NPC_ID] = nil
+        for i = #(Objects._order or {}), 1, -1 do
+          if Objects._order[i] == REGIGIGAS_NPC_ID then table.remove(Objects._order, i) end
+        end
+      end
+      regigigasActor = nil
+    end
+
+    local function regigigasCaught(session)
+      return session and session.dex and REGIGIGAS_SPECIES
+        and Dex.isCaught(session.dex, REGIGIGAS_SPECIES) == true
+    end
+
+    local function showRegigigas()
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      local shouldShow = session and session.map == REGIGIGAS_MAP
+        and (session and session.dex
+        and Dex.isCaught(session.dex, Pokemon.speciesFromNational(377)) == true
+        and Dex.isCaught(session.dex, Pokemon.speciesFromNational(378)) == true
+        and Dex.isCaught(session.dex, Pokemon.speciesFromNational(379)) == true
+        and (stationaryStoryFlag("FLAG_RECOVERED_SAPPHIRE") or stationaryHasItem(session, 374)))
+        and not regigigasCaught(session) and not regigigasBusy
+      if not shouldShow then clearRegigigasActor(); return end
+      if regigigasActor and Objects._byId and Objects._byId[REGIGIGAS_NPC_ID] == regigigasActor then return end
+      clearRegigigasActor()
+      if not Objects._byId or not Objects._order then return end
+
+      local personality = engine.random32 and engine.random32() or 0
+      local atlasSpecies = engine.expansionSpecies(REGIGIGAS_SPECIES, personality)
+      if not atlasSpecies then return end
+      local female = engine.femaleFor and engine.femaleFor(REGIGIGAS_SPECIES, personality) or false
+      local sheet, row = engine.Gfx.sheetFor(atlasSpecies, female, false)
+      if not sheet then return end
+      local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
+      local x, y = 7, 5
+      local elevation = engine.elevationAt and engine.elevationAt(x, y) or 3
+      local actor = {
+        active=true, localId=REGIGIGAS_NPC_ID, originLocalId=REGIGIGAS_NPC_ID,
+        originMapId=session.map, cellX=x, cellY=y, px=x*16, py=y*16,
+        homeX=x, homeY=y, targetX=x, targetY=y,
+        facing="down", sprite=graphicsId, graphicsId=graphicsId,
+        elevation=elevation, currentElevation=elevation,
+        movementType=0x09, movement="STAY", range="DOWN",
+        radius={x=0,y=0}, rangeX=0, rangeY=0,
+        visible=true, hidden=false, invisible=false, frozen=true,
+        passable=false, moving=false, progress=0, stepFrames=16,
+        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=5,
+        def={ localId=REGIGIGAS_NPC_ID, x=x, y=y, graphicsId=graphicsId,
+          movementType=0x09, facing="down" },
+      }
+      Objects._byId[REGIGIGAS_NPC_ID] = actor
+      Objects._order[#Objects._order + 1] = REGIGIGAS_NPC_ID
+      regigigasActor = actor
+    end
+
+    local function triggerRegigigas()
+      if not regigigasActor or not regigigasActor.active or regigigasBusy then return false end
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      if not session or session.map ~= REGIGIGAS_MAP then return false end
+      local P = engine.Player
+      local distance = math.abs(P.cellX - regigigasActor.cellX) + math.abs(P.cellY - regigigasActor.cellY)
+      if distance ~= 1 then return false end
+
+      local Fade = require("src.ui.game3.fade")
+      regigigasBusy = true
+      engine.Field.locked = true
+      if P.cellX < regigigasActor.cellX then P.facing = "right"
+      elseif P.cellX > regigigasActor.cellX then P.facing = "left"
+      elseif P.cellY < regigigasActor.cellY then P.facing = "down"
+      else P.facing = "up" end
+
+      local toWhite = Fade.MODE and (Fade.MODE.TO_WHITE or Fade.MODE.WHITE)
+      local fromWhite = Fade.MODE and (Fade.MODE.FROM_WHITE or Fade.MODE.WHITE_IN)
+      local function battle()
+        clearRegigigasActor()
+        mod.world:startWildBattle(REGIGIGAS_SPECIES, 70, function()
+          engine.Field.locked = false
+          regigigasBusy = false
+          if not regigigasCaught(session) then clearRegigigasActor() end
+        end)
+      end
+      if toWhite and fromWhite then
+        Fade.begin(toWhite, 1, function()
+          Fade.begin(fromWhite, 1, battle)
+        end)
+      else
+        battle()
+      end
+      return true
+    end
+
+    local HEATRAN_SPECIES = Pokemon.speciesFromNational(485)
+    local HEATRAN_MAP = "FR_MT_EMBER_RUBY_PATH_B5F"
+    local HEATRAN_NPC_ID = 129
+    local heatranActor = nil
+    local heatranBusy = false
+
+    local function clearHeatranActor()
+      if Objects._byId and Objects._byId[HEATRAN_NPC_ID] then
+        Objects._byId[HEATRAN_NPC_ID] = nil
+        for i = #(Objects._order or {}), 1, -1 do
+          if Objects._order[i] == HEATRAN_NPC_ID then table.remove(Objects._order, i) end
+        end
+      end
+      heatranActor = nil
+    end
+
+    local function heatranCaught(session)
+      return session and session.dex and HEATRAN_SPECIES
+        and Dex.isCaught(session.dex, HEATRAN_SPECIES) == true
+    end
+
+    local function showHeatran()
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      local shouldShow = session and session.map == HEATRAN_MAP
+        and (true)
+        and not heatranCaught(session) and not heatranBusy
+      if not shouldShow then clearHeatranActor(); return end
+      if heatranActor and Objects._byId and Objects._byId[HEATRAN_NPC_ID] == heatranActor then return end
+      clearHeatranActor()
+      if not Objects._byId or not Objects._order then return end
+
+      local personality = engine.random32 and engine.random32() or 0
+      local atlasSpecies = engine.expansionSpecies(HEATRAN_SPECIES, personality)
+      if not atlasSpecies then return end
+      local female = engine.femaleFor and engine.femaleFor(HEATRAN_SPECIES, personality) or false
+      local sheet, row = engine.Gfx.sheetFor(atlasSpecies, female, false)
+      if not sheet then return end
+      local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
+      local x, y = 7, 5
+      local elevation = engine.elevationAt and engine.elevationAt(x, y) or 3
+      local actor = {
+        active=true, localId=HEATRAN_NPC_ID, originLocalId=HEATRAN_NPC_ID,
+        originMapId=session.map, cellX=x, cellY=y, px=x*16, py=y*16,
+        homeX=x, homeY=y, targetX=x, targetY=y,
+        facing="down", sprite=graphicsId, graphicsId=graphicsId,
+        elevation=elevation, currentElevation=elevation,
+        movementType=0x09, movement="STAY", range="DOWN",
+        radius={x=0,y=0}, rangeX=0, rangeY=0,
+        visible=true, hidden=false, invisible=false, frozen=true,
+        passable=false, moving=false, progress=0, stepFrames=16,
+        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=11,
+        def={ localId=HEATRAN_NPC_ID, x=x, y=y, graphicsId=graphicsId,
+          movementType=0x09, facing="down" },
+      }
+      Objects._byId[HEATRAN_NPC_ID] = actor
+      Objects._order[#Objects._order + 1] = HEATRAN_NPC_ID
+      heatranActor = actor
+    end
+
+    local function triggerHeatran()
+      if not heatranActor or not heatranActor.active or heatranBusy then return false end
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      if not session or session.map ~= HEATRAN_MAP then return false end
+      local P = engine.Player
+      local distance = math.abs(P.cellX - heatranActor.cellX) + math.abs(P.cellY - heatranActor.cellY)
+      if distance ~= 1 then return false end
+
+      local Fade = require("src.ui.game3.fade")
+      heatranBusy = true
+      engine.Field.locked = true
+      if P.cellX < heatranActor.cellX then P.facing = "right"
+      elseif P.cellX > heatranActor.cellX then P.facing = "left"
+      elseif P.cellY < heatranActor.cellY then P.facing = "down"
+      else P.facing = "up" end
+
+      local toWhite = Fade.MODE and (Fade.MODE.TO_WHITE or Fade.MODE.WHITE)
+      local fromWhite = Fade.MODE and (Fade.MODE.FROM_WHITE or Fade.MODE.WHITE_IN)
+      local function battle()
+        clearHeatranActor()
+        mod.world:startWildBattle(HEATRAN_SPECIES, 70, function()
+          engine.Field.locked = false
+          heatranBusy = false
+          if not heatranCaught(session) then clearHeatranActor() end
+        end)
+      end
+      if toWhite and fromWhite then
+        Fade.begin(toWhite, 1, function()
+          Fade.begin(fromWhite, 1, battle)
+        end)
+      else
+        battle()
+      end
+      return true
+    end
     -- Manaphy / Phione: after becoming Champion, the Route 5 Day Care man
     -- gives one genuine Manaphy Egg. Manaphy + Ditto then produces Phione
     -- through the normal two-parent Day Care breeding system.
@@ -1981,7 +2333,11 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       end
       showTowerDarkrai()
       showCresselia()
-      showStationaryLegend()
+      showRegice()
+      showRegisteel()
+      showRegirock()
+      showRegigigas()
+      showHeatran()
       tryTicketEvents()
     end)
     mod.events:on("world.stepped", function(ev)
@@ -1990,8 +2346,16 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       triggerDarkraiScene()
       showCresselia()
       triggerCresseliaScene()
-      showStationaryLegend()
-      triggerStationaryLegend()
+      showRegice()
+      showRegisteel()
+      showRegirock()
+      showRegigigas()
+      showHeatran()
+      triggerRegice()
+      triggerRegisteel()
+      triggerRegirock()
+      triggerRegigigas()
+      triggerHeatran()
       tryTicketEvents()
     end)
 
