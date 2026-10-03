@@ -739,12 +739,12 @@ return function(mod)
       end
     end
 
-    local navelRockSailorInteract
+    local specialIslandSailorInteract
     local rawFieldInteract = Field.interact
     if not Field._fossilDealerInteractInstalled then
       Field.interact = function(game)
         local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-        if navelRockSailorInteract and navelRockSailorInteract(game, session) then return true end
+        if specialIslandSailorInteract and specialIslandSailorInteract(game, session) then return true end
         if labScientistAhead(session) and not Field.isLocked() then
           local state = extraFossilState(session)
           if state.pending then
@@ -898,15 +898,16 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
         end
 
 
-        local navelReturnTask
-        local function isNavelHarbor(session)
+        local function specialIslandOrigin(session)
           local id = tostring(session and session.map or ""):upper()
-          return id:find("NAVEL_ROCK_HARBOR", 1, true) ~= nil
-            or id:find("NAVELROCK_HARBOR", 1, true) ~= nil
+          if id:find("NAVEL_ROCK_HARBOR", 1, true) or id:find("NAVELROCK_HARBOR", 1, true) then return 9 end
+          if id:find("BIRTH_ISLAND_HARBOR", 1, true) or id:find("BIRTHISLAND_HARBOR", 1, true) then return 10 end
+          return nil
         end
 
-        navelRockSailorInteract = function(game, session)
-          if not isNavelHarbor(session) or Field.isLocked() then return false end
+        specialIslandSailorInteract = function(game, session)
+          local origin = specialIslandOrigin(session)
+          if not origin or Field.isLocked() then return false end
           local dx, dy = 0, 0
           local face = Player.facing
           if face == "up" then dy=-1 elseif face == "down" then dy=1
@@ -918,24 +919,41 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
           local adapters = Adapters.host(mod, game, game and (game.overworld or game.world))
           local ctx = SpaceSea.vm and SpaceSea.vm.ctx or nil
           local MENU_ID = 0xF002
-          Field.lock("navel_rock_ferry")
+          Field.lock("special_island_ferry")
+
+          local function sail(dest)
+            FlagsSea.setVar(SpaceSea.store, ctx, 0x8004, origin)
+            FlagsSea.setVar(SpaceSea.store, ctx, 0x8006, dest)
+            Field.unlock("special_island_ferry")
+            local key = SpaceSea.scriptKey("EventScript_SailToDest")
+            if not key or not SpaceSea.startScript(key) then
+              Field.unlock()
+            end
+          end
 
           local function choose(page)
-            local labels, top = oldMenu(9, page)
-            Multichoice.LISTS[MENU_ID] = { labels=labels, count=#labels }
-            adapters.multichoice({
-              op="multichoice", [1]=17, [2]=top, [3]=MENU_ID, [4]=0,
-            }, function(sel)
-              local dest = oldSelected(9, page, tonumber(sel) or 127)
+            local labels, dests = {}, {}
+            if page == 0 then
+              labels = {"VERMILION", "ONE ISLAND", "TWO ISLAND", "THREE ISLAND", "OTHER", "EXIT"}
+              dests = {0, 1, 2, 3, 254, 127}
+            elseif page == 1 then
+              labels = {"FOUR ISLAND", "FIVE ISLAND", "SIX ISLAND", "SEVEN ISLAND", "OTHER", "EXIT"}
+              dests = {4, 5, 6, 7, 254, 127}
+            else
+              if origin ~= 9 and hasMysticTicket() then labels[#labels+1], dests[#dests+1] = "NAVEL ROCK", 9 end
+              if origin ~= 10 and hasAuroraTicket() then labels[#labels+1], dests[#dests+1] = "BIRTH ISLAND", 10 end
+              labels[#labels+1], dests[#dests+1] = "OTHER", 254
+              labels[#labels+1], dests[#dests+1] = "EXIT", 127
+            end
+            Multichoice.LISTS[MENU_ID] = {labels=labels, count=#labels}
+            adapters.multichoice({op="multichoice",[1]=17,[2]=2,[3]=MENU_ID,[4]=0}, function(sel)
+              local dest = dests[(tonumber(sel) or 127) + 1] or 127
               if dest == 254 then
-                choose(page == 1 and 0 or 1)
+                choose((page + 1) % 3)
               elseif dest == 127 then
-                Field.unlock("navel_rock_ferry")
+                Field.unlock("special_island_ferry")
               else
-                FlagsSea.setVar(SpaceSea.store, ctx, 0x8004, 9)
-                FlagsSea.setVar(SpaceSea.store, ctx, 0x8006, dest)
-                Field.unlock("navel_rock_ferry")
-                navelReturnTask = oldFerryTask(ctx, adapters, dest)
+                sail(dest)
               end
             end)
           end
@@ -943,14 +961,6 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
           Message.show("Where do you want to sail?", function() choose(0) end)
           return true
         end
-
-        mod.events:on("world.stepped", function()
-          if navelReturnTask and navelReturnTask() then
-            navelReturnTask = nil
-          end
-        end)
-
-
       end
     end
 
