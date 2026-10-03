@@ -356,6 +356,20 @@ return function(mod)
     end)
   end
 
+  -- Keep the player's native healthbox on the right side of the widened
+  -- battle composition. This only affects the upper/native Gen3 HUD; Kanto
+  -- Gear's lower-screen battle UI is independent.
+  local okHealthbox, Healthbox = pcall(require, "src.core.game3.battle.healthbox")
+  if okHealthbox and Healthbox then
+    -- A singles player box is 96 px wide from its left-half center. Moving
+    -- the center from 158 to 184 keeps it right-aligned in the 240 px space.
+    Healthbox.PLAYER_CENTER.x = 184
+    if Healthbox.CENTERS and Healthbox.CENTERS[false]
+        and Healthbox.CENTERS[false][0] then
+      Healthbox.CENTERS[false][0].x = 184
+    end
+  end
+
   -- Gen 3's stock battle renderer hard-codes a 32,32 origin because vanilla
   -- pics are 64x64. Intercept only draws of our G9 images: use their real
   -- centre as the origin and apply the scene/alignment corrections above.
