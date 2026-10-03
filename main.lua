@@ -2075,11 +2075,17 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       return true
     end
 
+    -- Heatran: intentionally implemented as a standalone Cresselia-style
+    -- stationary actor. It has no RTC or Ruby prerequisite.
     local HEATRAN_SPECIES = Pokemon.speciesFromNational(485)
     local HEATRAN_MAP = "FR_MT_EMBER_RUBY_PATH_B5F"
     local HEATRAN_NPC_ID = 132
     local heatranActor = nil
     local heatranBusy = false
+
+    local function heatranCaught(session)
+      return session and session.dex and Dex.isCaught(session.dex, HEATRAN_SPECIES) == true
+    end
 
     local function clearHeatranActor()
       if Objects._byId and Objects._byId[HEATRAN_NPC_ID] then
@@ -2091,15 +2097,9 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       heatranActor = nil
     end
 
-    local function heatranCaught(session)
-      return session and session.dex and HEATRAN_SPECIES
-        and Dex.isCaught(session.dex, HEATRAN_SPECIES) == true
-    end
-
     local function showHeatran()
       local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
       local shouldShow = session and session.map == HEATRAN_MAP
-        and (true)
         and not heatranCaught(session) and not heatranBusy
       if not shouldShow then clearHeatranActor(); return end
       if heatranActor and Objects._byId and Objects._byId[HEATRAN_NPC_ID] == heatranActor then return end
@@ -2113,6 +2113,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       local sheet, row = engine.Gfx.sheetFor(atlasSpecies, female, false)
       if not sheet then return end
       local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
+
       local x, y = 7, 5
       local elevation = engine.elevationAt and engine.elevationAt(x, y) or 3
       local actor = {
@@ -2125,7 +2126,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
         radius={x=0,y=0}, rangeX=0, rangeY=0,
         visible=true, hidden=false, invisible=false, frozen=true,
         passable=false, moving=false, progress=0, stepFrames=16,
-        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=11,
+        scriptBusy=false, _uadvIdleSheet=sheet, _uadvIdleRow=row, _uadvIdleTick=8,
         def={ localId=HEATRAN_NPC_ID, x=x, y=y, graphicsId=graphicsId,
           movementType=0x09, facing="down" },
       }
@@ -2134,7 +2135,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       heatranActor = actor
     end
 
-    local function triggerHeatran()
+    local function triggerHeatranScene()
       if not heatranActor or not heatranActor.active or heatranBusy then return false end
       local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
       if not session or session.map ~= HEATRAN_MAP then return false end
@@ -2348,7 +2349,6 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       showRegisteel()
       showRegirock()
       showRegigigas()
-      showHeatran()
     end)
 
     mod.events:on("world.stepped", function(ev)
@@ -2366,7 +2366,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       triggerRegisteel()
       triggerRegirock()
       triggerRegigigas()
-      triggerHeatran()
+      triggerHeatranScene()
       tryTicketEvents()
     end)
 
