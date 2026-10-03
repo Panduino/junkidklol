@@ -1707,8 +1707,18 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
         if def.requiresRuby then
           local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
           local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
-          unlocked = okSpace and okFlags and Space and Space.store and Flags
+          local gotRubyFlag = okSpace and okFlags and Space and Space.store and Flags
             and Flags.getFlag(Space.store, nil, "FLAG_GOT_RUBY") == true
+          local hasRuby = false
+          if session and session.bag then
+            local okBag, Bag = pcall(require, "src.core.game3.bag")
+            hasRuby = okBag and Bag and type(Bag.has) == "function"
+              and Bag.has(session.bag, 373, 1) == true
+          end
+          -- Picking up the Ruby is the unlock point. Accept either the story
+          -- flag or the key item itself so this works across imported/older
+          -- saves whose script flag store may not mirror the live bag yet.
+          unlocked = gotRubyFlag or hasRuby
         end
         local shouldShow = session and session.map == def.map and unlocked and not caught and not regiBusy
         if not shouldShow then
