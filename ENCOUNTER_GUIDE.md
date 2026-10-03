@@ -653,7 +653,7 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 104 | Cubone | Rock Tunnel 1f (morning); Rock Tunnel 1f (day); Rock Tunnel 1f (night); … |
 | 105 | Marowak | Route 23 (morning); Route 23 (day); Rock Tunnel B1f (morning); … |
 | 106 | Hitmonlee | Route 12 (morning) |
-| 107 | Hitmonchan | Vanilla FireRed/National Dex acquisition or evolution |
+| 107 | Hitmonchan| Saffron City Fighting Dojo — choose Hitmonchan after defeating the Karate Master |
 | 108 | Lickitung | Route 1 (day) |
 | 109 | Koffing | Pokémon Mansion 1f (morning); Pokémon Mansion 1f (day); Pokémon Mansion 1f (night); … |
 | 110 | Weezing | Evolution/breeding family: Koffing — Pokémon Mansion 1f (morning); Pokémon Mansion 1f (day); Pokémon Mansion 1f (night); … |
@@ -688,7 +688,7 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 139 | Omastar | Evolution/breeding family: Omanyte — Route 23 (Surf) |
 | 140 | Kabuto | Route 23 (Surf) |
 | 141 | Kabutops | Evolution/breeding family: Kabuto — Route 23 (Surf) |
-| 142 | Aerodactyl | Vanilla FireRed/National Dex acquisition or evolution |
+| 142 | Aerodactyl| Old Amber → revive at the Cinnabar Island Pokémon Lab |
 | 143 | Snorlax | Route 12 (day) |
 | 144 | Articuno | Vanilla stationary |
 | 145 | Zapdos | Vanilla stationary |
@@ -704,9 +704,9 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 155 | Cyndaquil | Pokémon Mansion 1f (night) |
 | 156 | Quilava | Evolution/breeding family: Cyndaquil — Pokémon Mansion 1f (night) |
 | 157 | Typhlosion | Evolution/breeding family: Cyndaquil — Pokémon Mansion 1f (night) |
-| 158 | Totodile | Vanilla FireRed/National Dex acquisition or evolution |
-| 159 | Croconaw | Vanilla FireRed/National Dex acquisition or evolution |
-| 160 | Feraligatr | Vanilla FireRed/National Dex acquisition or evolution |
+| 158 | Totodile| **No current location — encounter coverage gap** |
+| 159 | Croconaw| Evolve Totodile (Totodile currently has no acquisition location) |
+| 160 | Feraligatr| Evolve Croconaw (Totodile currently has no acquisition location) |
 | 161 | Sentret | Route 1 (morning); Route 1 (day) |
 | 162 | Furret | Route 1 (morning); Route 1 (day) |
 | 163 | Hoothoot | Route 1 (night); Route 2 (night); Route 6 (night); … |
@@ -719,9 +719,9 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 170 | Chinchou | Route 10 (Surf); Route 20 (day); Route 20 (night); … |
 | 171 | Lanturn | Evolution/breeding family: Chinchou — Route 10 (Surf); Route 20 (day); Route 20 (night); … |
 | 172 | Pichu | Viridian Forest (morning); Viridian Forest (day); Viridian Forest (night) |
-| 173 | Cleffa | Vanilla FireRed/National Dex acquisition or evolution |
-| 174 | Igglybuff | Vanilla FireRed/National Dex acquisition or evolution |
-| 175 | Togepi | Vanilla FireRed/National Dex acquisition or evolution |
+| 173 | Cleffa| Breed Clefairy/Clefable — Clefairy is found in Mt. Moon |
+| 174 | Igglybuff| Breed Jigglypuff/Wigglytuff — Jigglypuff is found on Route 3 |
+| 175 | Togepi| Water Labyrinth — Togepi Egg from the old man when the lead Pokémon has maximum friendship |
 | 176 | Togetic | Route 11 (morning) |
 | 177 | Natu | Route 5 (day) |
 | 178 | Xatu | Evolution/breeding family: Natu — Route 5 (day) |
@@ -747,7 +747,7 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 198 | Murkrow | Route 7 (night); Route 16 (night); Safari Zone Center (night); … |
 | 199 | Slowking | Evolution/breeding family: Slowpoke — Safari Zone West (morning); Safari Zone West (day) |
 | 200 | Misdreavus | Route 6 (night); Route 12 (night); Pokémon Tower 3f (morning); … |
-| 201 | Unown | Vanilla FireRed/National Dex acquisition or evolution |
+| 201 | Unown| Any numbered Kanto route handled by the mod — 1-in-1000 special encounter roll |
 | 202 | Wobbuffet | Cerulean Cave 1f (morning); Cerulean Cave 1f (day); Cerulean Cave 1f (night); … |
 | 203 | Girafarig | Route 7 (morning) |
 | 204 | Pineco | Route 24 (night) |
@@ -762,7 +762,7 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 213 | Shuckle | Route 4 (day) |
 | 214 | Heracross | Route 13 (night); Pattern Bush (morning); Pattern Bush (day); … |
 | 215 | Sneasel | Route 23 (night); Route 28 (night); Safari Zone Center (night); … |
-| 216 | Teddiursa | Vanilla FireRed/National Dex acquisition or evolution |
+| 216 | Teddiursa| Breed Ursaring — Ursaring is found on Route 28 (morning/day/night) |
 | 217 | Ursaring | Route 28 (morning); Route 28 (day); Route 28 (night); … |
 | 218 | Slugma | Route 16 (morning); Route 16 (day); Route 16 (night); … |
 | 219 | Magcargo | Evolution/breeding family: Slugma — Route 16 (morning); Route 16 (day); Route 16 (night); … |
@@ -772,21 +772,21 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 223 | Remoraid | Route 10 (Surf); Route 28 (Surf) |
 | 224 | Octillery | Evolution/breeding family: Remoraid — Route 10 (Surf); Route 28 (Surf) |
 | 225 | Delibird | Seafoam Islands 1f (night) |
-| 226 | Mantine | Vanilla FireRed/National Dex acquisition or evolution |
+| 226 | Mantine| **No current location — encounter coverage gap** |
 | 227 | Skarmory | Route 23 (day) |
 | 228 | Houndour | Route 7 (night); Route 23 (night); Pokémon Mansion 1f (night); … |
 | 229 | Houndoom | Evolution/breeding family: Houndour — Route 7 (night); Route 23 (night); Pokémon Mansion 1f (night); … |
 | 230 | Kingdra | Evolution/breeding family: Horsea — Route 4 (Surf) |
-| 231 | Phanpy | Vanilla FireRed/National Dex acquisition or evolution |
+| 231 | Phanpy| Breed Donphan — Donphan is found on Route 28 (morning/day/night) |
 | 232 | Donphan | Route 28 (morning); Route 28 (day); Route 28 (night); … |
 | 233 | Porygon2 | Evolution/breeding family: Porygon — Route 3 (morning) |
 | 234 | Stantler | Route 12 (night) |
 | 235 | Smeargle | Route 6 (night) |
-| 236 | Tyrogue | Vanilla FireRed/National Dex acquisition or evolution |
-| 237 | Hitmontop | Vanilla FireRed/National Dex acquisition or evolution |
-| 238 | Smoochum | Vanilla FireRed/National Dex acquisition or evolution |
-| 239 | Elekid | Vanilla FireRed/National Dex acquisition or evolution |
-| 240 | Magby | Vanilla FireRed/National Dex acquisition or evolution |
+| 236 | Tyrogue| Breed Hitmonlee or Hitmonchan — Fighting Dojo supplies the parent |
+| 237 | Hitmontop| Evolve Tyrogue at Lv. 20 with equal Attack and Defense; breed Hitmonlee/Hitmonchan for Tyrogue |
+| 238 | Smoochum| Breed Jynx — Jynx is found in the Seafoam Islands |
+| 239 | Elekid| Breed Electabuzz — Electabuzz is found on Route 10 and at the Power Plant |
+| 240 | Magby| Breed Magmar — Magmar is found in Pokémon Mansion |
 | 241 | Miltank | Route 18 (morning) |
 | 242 | Blissey | Evolution/breeding family: Chansey — Route 13 (morning); Route 13 (day); Route 13 (night); … |
 | 243 | Raikou | Roamer |
@@ -844,7 +844,7 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 295 | Exploud | Evolution/breeding family: Whismur — Route 11 (day) |
 | 296 | Makuhita | Rock Tunnel 1f (morning); Rock Tunnel 1f (day); Rock Tunnel 1f (night); … |
 | 297 | Hariyama | Evolution/breeding family: Makuhita — Rock Tunnel 1f (morning); Rock Tunnel 1f (day); Rock Tunnel 1f (night); … |
-| 298 | Azurill | Vanilla FireRed/National Dex acquisition or evolution |
+| 298 | Azurill| Breed Marill/Azumarill while holding Sea Incense — Marill is added to Route 6 |
 | 299 | Nosepass | Route 28 (morning) |
 | 300 | Skitty | Route 11 (night) |
 | 301 | Delcatty | Evolution/breeding family: Skitty — Route 11 (night) |
@@ -906,7 +906,7 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 357 | Tropius | Route 14 (day) |
 | 358 | Chimecho | Evolution/breeding family: Chingling — Rock Tunnel 1f (morning); Rock Tunnel 1f (day); Rock Tunnel 1f (night); … |
 | 359 | Absol | Seafoam Islands 1f (morning); Seafoam Islands 1f (day); Seafoam Islands 1f (night); … |
-| 360 | Wynaut | Vanilla FireRed/National Dex acquisition or evolution |
+| 360 | Wynaut| Breed Wobbuffet while holding Lax Incense — Wobbuffet is found in Cerulean Cave |
 | 361 | Snorunt | Seafoam Islands B1f (morning) |
 | 362 | Glalie | Evolution/breeding family: Snorunt — Seafoam Islands B1f (morning) |
 | 363 | Spheal | Route 19 (Surf) |
@@ -915,7 +915,7 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 366 | Clamperl | Route 19 (Surf) |
 | 367 | Huntail | Evolution/breeding family: Clamperl — Route 19 (Surf) |
 | 368 | Gorebyss | Evolution/breeding family: Clamperl — Route 19 (Surf) |
-| 369 | Relicanth | Vanilla FireRed/National Dex acquisition or evolution |
+| 369 | Relicanth| **No current location — encounter coverage gap** |
 | 370 | Luvdisc | Route 20 (Surf) |
 | 371 | Bagon | Victory Road 2f (night) |
 | 372 | Shelgon | Evolution/breeding family: Bagon — Victory Road 2f (night) |
@@ -984,15 +984,15 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 435 | Skuntank | Evolution/breeding family: Stunky — Route 8 (day) |
 | 436 | Bronzor | Rock Tunnel 1f (morning); Rock Tunnel 1f (day); Rock Tunnel 1f (night); … |
 | 437 | Bronzong | Evolution/breeding family: Bronzor — Rock Tunnel 1f (morning); Rock Tunnel 1f (day); Rock Tunnel 1f (night); … |
-| 438 | Bonsly | Vanilla FireRed/National Dex acquisition or evolution |
-| 439 | Mime Jr. | Vanilla FireRed/National Dex acquisition or evolution |
-| 440 | Happiny | Vanilla FireRed/National Dex acquisition or evolution |
+| 438 | Bonsly| Breed Sudowoodo while holding Rock Incense — Sudowoodo is found on Route 23 |
+| 439 | Mime Jr.| Breed Mr. Mime while holding Odd Incense — Mr. Mime is added to Route 5 |
+| 440 | Happiny| Breed Chansey/Blissey while holding Luck Incense — Chansey is found on Routes 13–15 / Safari Zone |
 | 441 | Chatot | Victory Road 3f (night) |
 | 442 | Spiritomb | Pokémon Tower 4f (morning) |
 | 443 | Gible | Route 23 (morning) |
 | 444 | Gabite | Evolution/breeding family: Gible — Route 23 (morning) |
 | 445 | Garchomp | Evolution/breeding family: Gible — Route 23 (morning) |
-| 446 | Munchlax | Vanilla FireRed/National Dex acquisition or evolution |
+| 446 | Munchlax| Breed Snorlax while holding Full Incense — Snorlax is available through FireRed's stationary encounters |
 | 447 | Riolu | Route 12 (morning); Cerulean Cave 1f (morning); Cerulean Cave 1f (day); … |
 | 448 | Lucario | Evolution/breeding family: Riolu — Route 12 (morning); Cerulean Cave 1f (morning); Cerulean Cave 1f (day); … |
 | 449 | Hippopotas | Route 23 (day) |
@@ -1004,7 +1004,7 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 455 | Carnivine | Viridian Forest (morning); Viridian Forest (day); Viridian Forest (night) |
 | 456 | Finneon | Route 18 (Surf); Route 28 (Surf) |
 | 457 | Lumineon | Evolution/breeding family: Finneon — Route 18 (Surf); Route 28 (Surf) |
-| 458 | Mantyke | Vanilla FireRed/National Dex acquisition or evolution |
+| 458 | Mantyke| Breed Mantine while holding Wave Incense — **Mantine currently has no acquisition location, so this family is a coverage gap** |
 | 459 | Snover | Seafoam Islands B1f (day) |
 | 460 | Abomasnow | Evolution/breeding family: Snover — Seafoam Islands B1f (day) |
 | 461 | Weavile | Evolution/breeding family: Sneasel — Route 23 (night); Route 28 (night); Safari Zone Center (night); … |
@@ -1040,6 +1040,16 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 491 | Darkrai | Pokémon Tower 7F event → nighttime roamer |
 | 492 | Shaymin | Pattern Bush |
 | 493 | Arceus | Not currently supplied by this compatibility mod |
+
+### Known Obtainability Gaps
+
+The current encounter logic still leaves these evolutionary families without a complete in-mod acquisition path:
+
+- **Totodile / Croconaw / Feraligatr** — Totodile is listed as a missing Water-family representative, but Water-family representatives are skipped by the generated land assignment and Totodile is not currently present in `WATER_ADDITIONS`.
+- **Mantine / Mantyke** — Mantine is likewise skipped by the land generator and is not currently assigned to a water table.
+- **Relicanth** — listed as a missing Water-family representative but not currently assigned to a water table.
+
+These are documented as gaps rather than attributing them to an unspecified National Dex implementation. If the goal is complete single-player #001–#493 family coverage, these three water-family gaps should be assigned encounter locations in `main.lua`.
 
 ## Notes
 
