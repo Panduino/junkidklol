@@ -171,7 +171,7 @@ return function(mod)
     -- Back sprites sit much closer to the camera in G9. Allow small backs to
     -- grow instead of permanently capping every trimmed sheet at 1:1.
     local naturalScale = 1
-    local targetScale = back and 1.5 or 1
+    local targetScale = 1
     local fitScale = math.min(naturalScale, maxW / cw, maxH / ch)
     -- Front path restored to the known-good e44e927 behavior. It bakes the
     -- trimmed G9 frame using the original fit calculation, but never applies
@@ -180,9 +180,7 @@ return function(mod)
     -- Preserve back sprite source resolution exactly; size it for the scene
     -- only at draw time. Fronts retain their known-good e44e927 bake path.
     local scale = back and 1 or fitScale
-    local drawScale = back
-      and math.min(targetScale, maxW / cw, maxH / ch)
-      or 1
+    local drawScale = 1
     local dw = math.max(1, math.floor(cw * scale + 0.5))
     local dh = math.max(1, math.floor(ch * scale + 0.5))
     local frames = {}
@@ -248,7 +246,7 @@ return function(mod)
     -- own per-species FrontSprite Y metric, so short/low-bodied species are
     -- lowered individually instead of moving every enemy by the same amount.
     imageMeta[img] = {
-      drawScale = back and (frames._g9DrawScale or 1) or 1,
+      drawScale = 1,
       g9Back = back,
       -- Keep the scene correction, but also respect G9's authored back
       -- placement instead of centering every species identically.
@@ -409,15 +407,17 @@ return function(mod)
           x = (x or 0) + (meta.ox or 0)
           y = (y or 0) + (meta.oy or 0)
           if meta.g9Back then
-            -- Back frames stay native-resolution in the cache. Enlarge only
-            -- when drawing so no source pixels are discarded, while retaining
-            -- the proven centre anchor and scene placement.
+            -- Use the same lossless draw path as the working fronts: keep the
+            -- native cached pixels and FireRed's supplied scale unchanged,
+            -- then translate its stock 32,32 origin to the trimmed image's
+            -- actual centre. No G9-specific resize occurs here.
+            local iw, ih = drawable:getDimensions()
             local baseSx = sx or 1
             local baseSy = sy or baseSx
-            local ds = meta.drawScale or 1
-            sx = baseSx * ds
-            sy = baseSy * ds
-            local iw, ih = drawable:getDimensions()
+            local nativeOx = tonumber(ox) or 32
+            local nativeOy = tonumber(oy) or 32
+            x = (x or 0) + (iw * 0.5 - nativeOx) * baseSx
+            y = (y or 0) + (ih * 0.5 - nativeOy) * baseSy
             ox = iw * 0.5
             oy = ih * 0.5
           else
