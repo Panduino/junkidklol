@@ -502,7 +502,7 @@ Fishing slots follow FireRed: Old Rod 1–2, Good Rod 3–5, Super Rod 6–10.
 | Dialga / Palkia | Not yet implemented |
 | Heatran / Regigigas / Giratina | Not yet implemented |
 | Cresselia | After witnessing Darkrai's event, Mt. Moon B2F fossil chamber at night, Lv. 50 |
-| Phione / Manaphy | Not yet implemented |
+| Phione / Manaphy | Manaphy: one-time post-Champion Egg from Route 5 Day Care man; Phione: breed Manaphy with Ditto |
 | Darkrai | Postgame Pokémon Tower 7F at night → Lv. 50 nighttime roamer |
 | Shaymin | Pattern Bush, Lv. 50 |
 | Arceus | Not yet implemented |
@@ -1040,8 +1040,8 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 486 | Regigigas | Not currently supplied by this compatibility mod |
 | 487 | Giratina | Not currently supplied by this compatibility mod |
 | 488 | Cresselia | Mt. Moon B2F at night after Darkrai event |
-| 489 | Phione | Not currently supplied by this compatibility mod |
-| 490 | Manaphy | Not currently supplied by this compatibility mod |
+| 489 | Phione | Breed Manaphy with Ditto at the breeding Day Care; the resulting Egg hatches into Phione |ntly supplied by this compatibility mod |
+| 490 | Manaphy | Post-Champion — receive a one-time mysterious Manaphy Egg from the Route 5 Day Care man, then hatch it normally |ntly supplied by this compatibility mod |
 | 491 | Darkrai | Pokémon Tower 7F event → nighttime roamer |
 | 492 | Shaymin | Pattern Bush |
 | 493 | Arceus | Not currently supplied by this compatibility mod |
