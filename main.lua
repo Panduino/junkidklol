@@ -21,9 +21,9 @@ return function(mod)
   end
 
   local G9_ID = "g9-battle-sprites"
-  local BOX = 64
   local FPS = 12
-  local g9Root, g9Data
+  local g9Root, g9Data, g9Metrics
+  local imageMeta = setmetatable({}, { __mode = "k" })
   local slotToId = {}
   local cache = {}
   local installed = false
