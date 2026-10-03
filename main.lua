@@ -241,7 +241,7 @@ return function(mod)
     -- lowered individually instead of moving every enemy by the same amount.
     imageMeta[img] = {
       drawScale = frames._g9DrawScale or 1,
-      g9Trimmed = true,
+      g9Back = back,
       -- Keep the scene correction, but also respect G9's authored back
       -- placement instead of centering every species identically.
       ox = back
@@ -391,10 +391,22 @@ return function(mod)
           -- G9 frames are union-trimmed canvases, not FireRed's fixed 64x64
           -- pictures. Center each trimmed image on the battler anchor instead
           -- of retaining the native hard-coded 32,32 origin.
-          if meta.g9Trimmed then
+          if meta.g9Back then
             local iw, ih = drawable:getDimensions()
             ox = iw * 0.5
             oy = ih * 0.5
+          else
+            -- Fronts looked correct when rendered through FireRed's native
+            -- 32,32 picture origin. Keep the current centered screen position
+            -- by compensating for the origin change instead of changing the
+            -- sprite's rendering behavior.
+            local iw, ih = drawable:getDimensions()
+            local dsx = sx or 1
+            local dsy = sy or dsx
+            x = (x or 0) + (32 - iw * 0.5) * dsx
+            y = (y or 0) + (32 - ih * 0.5) * dsy
+            ox = 32
+            oy = 32
           end
         end
         return realDraw(drawable, x, y, r, sx, sy, ox, oy, ...)
