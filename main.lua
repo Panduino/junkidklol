@@ -861,6 +861,29 @@ return function(mod)
       Field.interact = function(game)
         local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
 
+        -- After the Darkrai Tower event, two existing city NPCs hint at the
+        -- Mt. Moon disturbance. Before that point their stock scripts run.
+        if session and cresseliaUnlocked(session) and not cresseliaCaught(session)
+            and not Field.isLocked() then
+          local dx, dy = 0, 0
+          if Player.facing == "up" then dy=-1 elseif Player.facing == "down" then dy=1
+          elseif Player.facing == "left" then dx=-1 elseif Player.facing == "right" then dx=1 end
+          local ahead = Objects.at and Objects.at(Player.cellX + dx, Player.cellY + dy)
+          if ahead and session.map == "FR_PEWTER_CITY"
+              and tonumber(ahead.graphicsId) == 4 then
+            Message.show("Did you see that glow over MT. MOON last night?", function()
+              Message.show("I've never seen anything like it.")
+            end)
+            return true
+          elseif ahead and session.map == "FR_CERULEAN_CITY"
+              and tonumber(ahead.graphicsId) == 10 then
+            Message.show("Someone came through here from MT. MOON.", function()
+              Message.show("They said there was a strange presence deep inside the cave.")
+            end)
+            return true
+          end
+        end
+
         local function liveVar(id)
           local okSpace, Space = pcall(require, "src.core.game3.scripting.space")
           local okFlags, Flags = pcall(require, "src.core.game3.scripting.flags")
@@ -1228,6 +1251,117 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       return true
     end
 
+    -- Cresselia: after witnessing the Pokemon Tower Darkrai event, it can be
+    -- found at night in Mt. Moon's old fossil chamber. Defeating it does not
+    -- consume the encounter; only catching it completes the event.
+    local CRESSELIA_NAT = 488
+    local CRESSELIA_SPECIES = CRESSELIA_NAT + 64
+    local CRESSELIA_MAP = "FR_MT_MOON_B2F"
+    local CRESSELIA_NPC_ID = 127
+    local cresseliaActor = nil
+    local cresseliaBusy = false
+
+    local function cresseliaUnlocked(session)
+      if not session then return false end
+      local state = mysticTicketState(session)
+      return state.darkraiTowerTriggered == true
+    end
+
+    local function cresseliaCaught(session)
+      return session and session.dex and Dex.isCaught(session.dex, CRESSELIA_SPECIES) == true
+    end
+
+    local function clearCresseliaActor()
+      if Objects._byId and Objects._byId[CRESSELIA_NPC_ID] then
+        Objects._byId[CRESSELIA_NPC_ID] = nil
+        for i = #(Objects._order or {}), 1, -1 do
+          if Objects._order[i] == CRESSELIA_NPC_ID then table.remove(Objects._order, i) end
+        end
+      end
+      cresseliaActor = nil
+    end
+
+    local function showCresselia()
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      local shouldShow = session and session.map == CRESSELIA_MAP
+        and cresseliaUnlocked(session) and darkraiTowerTime()
+        and not cresseliaCaught(session) and not cresseliaBusy
+      if not shouldShow then clearCresseliaActor(); return end
+      if cresseliaActor and Objects._byId and Objects._byId[CRESSELIA_NPC_ID] == cresseliaActor then return end
+      clearCresseliaActor()
+      if not Objects._byId or not Objects._order then return end
+
+      local personality = engine.random32 and engine.random32() or 0
+      local atlasSpecies = engine.expansionSpecies(CRESSELIA_SPECIES, personality)
+      if not atlasSpecies then return end
+      local female = engine.femaleFor and engine.femaleFor(CRESSELIA_SPECIES, personality) or false
+      local sheet, row = engine.Gfx.sheetFor(atlasSpecies, female, false)
+      if not sheet then return end
+      local graphicsId = string.format("uadv:%d:0:0:%d:0", sheet, row)
+
+      -- This is the original fossil alcove; the vanilla fossils occupied
+      -- (13,7) and (14,7). Cresselia waits just below those old pedestals.
+      local x, y = 13, 8
+      local elevation = engine.elevationAt and engine.elevationAt(x, y) or 3
+      local actor = {
+        active=true, localId=CRESSELIA_NPC_ID, originLocalId=CRESSELIA_NPC_ID,
+        originMapId=session.map, cellX=x, cellY=y, px=x*16, py=y*16,
+        homeX=x, homeY=y, targetX=x, targetY=y,
+        facing="down", sprite=graphicsId, graphicsId=graphicsId,
+        elevation=elevation, currentElevation=elevation,
+        movementType=0x09, movement="STAY", range="DOWN",
+        radius={x=0,y=0}, rangeX=0, rangeY=0,
+        visible=true, hidden=false, invisible=false, frozen=true,
+        passable=false, moving=false, progress=0, stepFrames=16,
+        scriptBusy=false,
+        def={ localId=CRESSELIA_NPC_ID, x=x, y=y, graphicsId=graphicsId,
+          movementType=0x09, facing="down" },
+      }
+      Objects._byId[CRESSELIA_NPC_ID] = actor
+      Objects._order[#Objects._order + 1] = CRESSELIA_NPC_ID
+      cresseliaActor = actor
+    end
+
+    local function triggerCresseliaScene()
+      if not cresseliaActor or not cresseliaActor.active or cresseliaBusy then return false end
+      local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      if not session or session.map ~= CRESSELIA_MAP then return false end
+      local P = engine.Player
+      local distance = math.abs(P.cellX - cresseliaActor.cellX) + math.abs(P.cellY - cresseliaActor.cellY)
+      if distance ~= 1 then return false end
+
+      local Fade = require("src.ui.game3.fade")
+      cresseliaBusy = true
+      engine.Field.locked = true
+      if P.cellX < cresseliaActor.cellX then P.facing = "right"
+      elseif P.cellX > cresseliaActor.cellX then P.facing = "left"
+      elseif P.cellY < cresseliaActor.cellY then P.facing = "down"
+      else P.facing = "up" end
+
+      -- Use a brief pale flash when the fade module exposes white modes;
+      -- otherwise begin the battle directly rather than substituting a dark fade.
+      local toWhite = Fade.MODE and (Fade.MODE.TO_WHITE or Fade.MODE.WHITE)
+      local fromWhite = Fade.MODE and (Fade.MODE.FROM_WHITE or Fade.MODE.WHITE_IN)
+      local function battle()
+        clearCresseliaActor()
+        mod.world:startWildBattle(CRESSELIA_SPECIES, 50, function()
+          engine.Field.locked = false
+          cresseliaBusy = false
+          -- If it was defeated or escaped from, showCresselia() can restore it
+          -- on a later nighttime visit. A caught Cresselia never returns.
+          if not cresseliaCaught(session) then clearCresseliaActor() end
+        end)
+      end
+      if toWhite and fromWhite then
+        Fade.begin(toWhite, 1, function()
+          Fade.begin(fromWhite, 1, battle)
+        end)
+      else
+        battle()
+      end
+      return true
+    end
+
     local DARKRAI_NAT = 491
     local DARKRAI_SPECIES = DARKRAI_NAT + 64
     local TOWER_7F = "FR_POKEMON_TOWER_7F"
@@ -1417,12 +1551,15 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
     mod.events:on("map.entered", function(ev)
       refreshPeriod()
       showTowerDarkrai()
+      showCresselia()
       tryTicketEvents()
     end)
     mod.events:on("world.stepped", function(ev)
       refreshPeriod()
       showTowerDarkrai()
       triggerDarkraiScene()
+      showCresselia()
+      triggerCresseliaScene()
       tryTicketEvents()
     end)
 
