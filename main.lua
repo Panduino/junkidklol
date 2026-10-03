@@ -246,25 +246,23 @@ return function(mod)
       ox = back
         and (-28 + math.floor(((metric and tonumber(metric.bx)) or 0) * 0.5 + 0.5))
         or 2,
-      -- Natural G9 fronts are grounded by their trimmed bottom edge; pack fy
-      -- is deliberately ignored there. FireRed's centre-origin draw needs the
-      -- equivalent correction based on this frame's actual height. Floaters
-      -- receive G9's 35% content-height lift.
+      -- Natural G9 fronts are grounded by their trimmed bottom edge, then use
+      -- G9's per-species front Y metric. FireRed's centre-origin draw needs the
+      -- equivalent correction based on this frame's actual height.
       oy = back
         -- Player platform contact point in the authored 240x135 background is
         -- Shift the player/back battler another 12 px left from the authored platform
-        -- anchor to open space between it and the right-side HUD: -28,-1
+        -- anchor to open space between it and the right-side HUD: -28,-6
         -- while retaining G9's species-specific back metric.
-        and (-1 + math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5))
+        and (-6 + math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5))
         or (function()
-          -- Enemy platform contact point is (178,62), versus FireRed's
-          -- ENEMY_MON (176,40): +2,+14 after fullscreen vertical tuning. Preserve natural G9 grounding and
-          -- floater lift relative to that authored contact point.
+          -- Ground the trimmed front image on one stable authored enemy
+          -- contact point, then apply G9's own per-species front Y metric.
+          -- Do not invent a percentage-height lift for flying species:
+          -- dbk_metrics already describes their intended battle placement.
+          local fy = (metric and tonumber(metric.fy)) or 0
           local base = 32 - (h / 2) + 14
-          if stem and g9Floaters and g9Floaters[stem] then
-            base = base - math.max(2, math.floor(h * 0.35 + 0.5))
-          end
-          return math.floor(base + 0.5)
+          return math.floor(base + fy * 0.5 + 0.5)
         end)(),
     }
     return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
