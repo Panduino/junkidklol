@@ -870,13 +870,13 @@ return function(mod)
           elseif Player.facing == "left" then dx=-1 elseif Player.facing == "right" then dx=1 end
           local ahead = Objects.at and Objects.at(Player.cellX + dx, Player.cellY + dy)
           if ahead and session.map == "FR_PEWTER_CITY"
-              and tonumber(ahead.graphicsId) == 4 then
+              and ahead.scriptKey == "PewterCity_EventScript_Lass" then
             Message.show("Did you see that glow over MT. MOON last night?", function()
               Message.show("I've never seen anything like it.")
             end)
             return true
           elseif ahead and session.map == "FR_CERULEAN_CITY"
-              and tonumber(ahead.graphicsId) == 10 then
+              and ahead.scriptKey == "CeruleanCity_EventScript_BaldingMan" then
             Message.show("Someone came through here from MT. MOON.", function()
               Message.show("They said there was a strange presence deep inside the cave.")
             end)
@@ -1261,6 +1261,11 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
     local cresseliaActor = nil
     local cresseliaBusy = false
 
+    local function cresseliaNight()
+      local hour = tonumber(os.date("*t").hour) or 0
+      return hour >= 18 or hour < 4
+    end
+
     local function cresseliaUnlocked(session)
       if not session then return false end
       local state = mysticTicketState(session)
@@ -1284,8 +1289,9 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
     local function showCresselia()
       local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
       local shouldShow = session and session.map == CRESSELIA_MAP
-        and cresseliaUnlocked(session) and darkraiTowerTime()
+        and cresseliaUnlocked(session) and cresseliaNight()
         and not cresseliaCaught(session) and not cresseliaBusy
+        and mysticTicketState(session).cresseliaAttemptedThisVisit ~= true
       if not shouldShow then clearCresseliaActor(); return end
       if cresseliaActor and Objects._byId and Objects._byId[CRESSELIA_NPC_ID] == cresseliaActor then return end
       clearCresseliaActor()
@@ -1349,7 +1355,10 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
           cresseliaBusy = false
           -- If it was defeated or escaped from, showCresselia() can restore it
           -- on a later nighttime visit. A caught Cresselia never returns.
-          if not cresseliaCaught(session) then clearCresseliaActor() end
+          if not cresseliaCaught(session) then
+            mysticTicketState(session).cresseliaAttemptedThisVisit = true
+            clearCresseliaActor()
+          end
         end)
       end
       if toWhite and fromWhite then
@@ -1550,6 +1559,10 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
 
     mod.events:on("map.entered", function(ev)
       refreshPeriod()
+      local enteredSession = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+      if enteredSession and enteredSession.map == CRESSELIA_MAP then
+        mysticTicketState(enteredSession).cresseliaAttemptedThisVisit = false
+      end
       showTowerDarkrai()
       showCresselia()
       tryTicketEvents()
