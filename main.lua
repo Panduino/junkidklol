@@ -1719,7 +1719,10 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
 
     local function stationaryUnlocked(session, def)
       if def.gate == "heatran" then
-        return storyFlag("FLAG_GOT_RUBY") or hasKeyItem(session, 373)
+        -- Reaching Ruby Path B5F is sufficient. The chamber is only accessible
+        -- through the Ruby quest path, so do not add a second flag/item gate
+        -- that can incorrectly suppress this stationary encounter.
+        return true
       end
       if def.gate == "regigigas" then
         if not session or not session.dex then return false end
