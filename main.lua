@@ -1043,9 +1043,9 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
         local actions = {}
         while y < 8 do actions[#actions + 1] = { kind = "step", dir = "down" }; y = y + 1 end
         while y > 8 do actions[#actions + 1] = { kind = "step", dir = "up" }; y = y - 1 end
-        while x > 10 do actions[#actions + 1] = { kind = "step", dir = "left" }; x = x - 1 end
-        while x < 10 do actions[#actions + 1] = { kind = "step", dir = "right" }; x = x + 1 end
-        actions[#actions + 1] = { kind = "turn", dir = "left" }
+        while x > 9 do actions[#actions + 1] = { kind = "step", dir = "left" }; x = x - 1 end
+        while x < 9 do actions[#actions + 1] = { kind = "step", dir = "right" }; x = x + 1 end
+        actions[#actions + 1] = { kind = "turn", dir = "down" }
         Objects.startTrack(celioId, actions, nextStep)
       end
 
