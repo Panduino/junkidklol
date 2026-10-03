@@ -936,7 +936,12 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
               else
                 FlagsSea.setVar(SpaceSea.store, ctx, 0x8004, 9)
                 FlagsSea.setVar(SpaceSea.store, ctx, 0x8006, dest)
-                navelReturnTask = oldFerryTask(ctx, adapters, dest)
+                local task = oldFerryTask(ctx, adapters, dest)
+                navelReturnTask = function()
+                  local done = task()
+                  if done then Field.unlock("navel_rock_ferry") end
+                  return done
+                end
               end
             end)
           end
@@ -948,7 +953,6 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
         mod.events:on("world.stepped", function()
           if navelReturnTask and navelReturnTask() then
             navelReturnTask = nil
-            Field.unlock("navel_rock_ferry")
           end
         end)
 
@@ -985,7 +989,12 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
               else
                 FlagsSea.setVar(SpaceSea.store, ctx, 0x8004, 10)
                 FlagsSea.setVar(SpaceSea.store, ctx, 0x8006, dest)
-                birthReturnTask = oldFerryTask(ctx, adapters, dest)
+                local task = oldFerryTask(ctx, adapters, dest)
+                birthReturnTask = function()
+                  local done = task()
+                  if done then Field.unlock("birth_island_ferry") end
+                  return done
+                end
               end
             end)
           end
@@ -996,7 +1005,6 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
         mod.events:on("world.stepped", function()
           if birthReturnTask and birthReturnTask() then
             birthReturnTask = nil
-            Field.unlock("birth_island_ferry")
           end
         end)
       end
