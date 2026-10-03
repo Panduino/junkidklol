@@ -2340,6 +2340,17 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       showHeatran()
       tryTicketEvents()
     end)
+    -- Sevii/native map imports can perform a same-map rebind after map.entered.
+    -- Objects.loadMap() rebuilds _byId/_order during that rebind, which erases
+    -- synthetic stationary actors. Reinstall them after map.reloaded as well.
+    mod.events:on("map.reloaded", function(ev)
+      showRegice()
+      showRegisteel()
+      showRegirock()
+      showRegigigas()
+      showHeatran()
+    end)
+
     mod.events:on("world.stepped", function(ev)
       refreshPeriod()
       showTowerDarkrai()
