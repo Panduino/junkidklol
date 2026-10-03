@@ -862,28 +862,31 @@ return function(mod)
         local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
 
         -- After the Darkrai Tower event, two existing city NPCs hint at the
-        -- Mt. Moon disturbance. Before that point their stock scripts run.
-        local cresseliaState = session and mysticTicketState(session) or nil
-        local cresseliaIsCaught = session and session.dex
-          and Dex.isCaught(session.dex, 488 + 64) == true
-        if session and cresseliaState and cresseliaState.darkraiTowerTriggered == true
-            and not cresseliaIsCaught and not Field.isLocked() then
-          local dx, dy = 0, 0
-          if Player.facing == "up" then dy=-1 elseif Player.facing == "down" then dy=1
-          elseif Player.facing == "left" then dx=-1 elseif Player.facing == "right" then dx=1 end
-          local ahead = Objects.at and Objects.at(Player.cellX + dx, Player.cellY + dy)
-          if ahead and session.map == "FR_PEWTER_CITY"
-              and ahead.scriptKey == "PewterCity_EventScript_Lass" then
-            Message.show("Did you see that glow over MT. MOON last night?", function()
-              Message.show("I've never seen anything like it.")
-            end)
-            return true
-          elseif ahead and session.map == "FR_CERULEAN_CITY"
-              and ahead.scriptKey == "CeruleanCity_EventScript_BaldingMan" then
-            Message.show("Someone came through here from MT. MOON.", function()
-              Message.show("They said there was a strange presence deep inside the cave.")
-            end)
-            return true
+        -- Mt. Moon disturbance. Keep this early interaction hook self-contained:
+        -- the ticket/Cresselia helpers are declared later in install().
+        if session and (session.map == "FR_PEWTER_CITY" or session.map == "FR_CERULEAN_CITY")
+            and not Field.isLocked() then
+          local state = session.modData and session.modData[mod.id] or nil
+          local cresseliaIsCaught = session.dex
+            and Dex.isCaught(session.dex, 488 + 64) == true
+          if state and state.darkraiTowerTriggered == true and not cresseliaIsCaught then
+            local dx, dy = 0, 0
+            if Player.facing == "up" then dy=-1 elseif Player.facing == "down" then dy=1
+            elseif Player.facing == "left" then dx=-1 elseif Player.facing == "right" then dx=1 end
+            local ahead = Objects.at and Objects.at(Player.cellX + dx, Player.cellY + dy)
+            if ahead and session.map == "FR_PEWTER_CITY"
+                and ahead.scriptKey == "PewterCity_EventScript_Lass" then
+              Message.show("Did you see that glow over MT. MOON last night?", function()
+                Message.show("I've never seen anything like it.")
+              end)
+              return true
+            elseif ahead and session.map == "FR_CERULEAN_CITY"
+                and ahead.scriptKey == "CeruleanCity_EventScript_BaldingMan" then
+              Message.show("Someone came through here from MT. MOON.", function()
+                Message.show("They said there was a strange presence deep inside the cave.")
+              end)
+              return true
+            end
           end
         end
 
