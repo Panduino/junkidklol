@@ -705,9 +705,9 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 155 | Cyndaquil | Pokémon Mansion 1f (night) |
 | 156 | Quilava | Evolution/breeding family: Cyndaquil — Pokémon Mansion 1f (night) |
 | 157 | Typhlosion | Evolution/breeding family: Cyndaquil — Pokémon Mansion 1f (night) |
-| 158 | Totodile| **No current location — encounter coverage gap** |
-| 159 | Croconaw| Evolve Totodile (Totodile currently has no acquisition location) |
-| 160 | Feraligatr| Evolve Croconaw (Totodile currently has no acquisition location) |
+| 158 | Totodile | Route 4 — Surf at night |
+| 159 | Croconaw | Evolve Totodile — Route 4 Surf at night |
+| 160 | Feraligatr | Evolve Totodile/Croconaw — Route 4 Surf at night |
 | 161 | Sentret | Route 1 (morning); Route 1 (day) |
 | 162 | Furret | Route 1 (morning); Route 1 (day) |
 | 163 | Hoothoot | Route 1 (night); Route 2 (night); Route 6 (night); … |
@@ -773,7 +773,7 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 223 | Remoraid | Route 10 (Surf); Route 28 (Surf) |
 | 224 | Octillery | Evolution/breeding family: Remoraid — Route 10 (Surf); Route 28 (Surf) |
 | 225 | Delibird | Seafoam Islands 1f (night) |
-| 226 | Mantine| **No current location — encounter coverage gap** |
+| 226 | Mantine | Routes 19, 20, and 21 — Surf |
 | 227 | Skarmory | Route 23 (day) |
 | 228 | Houndour | Route 7 (night); Route 23 (night); Pokémon Mansion 1f (night); … |
 | 229 | Houndoom | Evolution/breeding family: Houndour — Route 7 (night); Route 23 (night); Pokémon Mansion 1f (night); … |
@@ -916,7 +916,7 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 366 | Clamperl | Route 19 (Surf) |
 | 367 | Huntail | Evolution/breeding family: Clamperl — Route 19 (Surf) |
 | 368 | Gorebyss | Evolution/breeding family: Clamperl — Route 19 (Surf) |
-| 369 | Relicanth| **No current location — encounter coverage gap** |
+| 369 | Relicanth | Route 21 — Super Rod |
 | 370 | Luvdisc | Route 20 (Surf) |
 | 371 | Bagon | Victory Road 2f (night) |
 | 372 | Shelgon | Evolution/breeding family: Bagon — Victory Road 2f (night) |
@@ -1005,7 +1005,7 @@ Direct locations are shown when this compatibility layer places the species. Oth
 | 455 | Carnivine | Viridian Forest (morning); Viridian Forest (day); Viridian Forest (night) |
 | 456 | Finneon | Route 18 (Surf); Route 28 (Surf) |
 | 457 | Lumineon | Evolution/breeding family: Finneon — Route 18 (Surf); Route 28 (Surf) |
-| 458 | Mantyke| Breed Mantine while holding Wave Incense — **Mantine currently has no acquisition location, so this family is a coverage gap** |
+| 458 | Mantyke | Breed Mantine while holding Wave Incense — Mantine is found by Surfing Routes 19, 20, and 21 |
 | 459 | Snover | Seafoam Islands B1f (day) |
 | 460 | Abomasnow | Evolution/breeding family: Snover — Seafoam Islands B1f (day) |
 | 461 | Weavile | Evolution/breeding family: Sneasel — Route 23 (night); Route 28 (night); Safari Zone Center (night); … |
