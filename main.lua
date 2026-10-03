@@ -69,9 +69,9 @@ return function(mod)
     { id="FR_ROUTE_28", habitat="mountain", min=39, max=43, gen=4, base={morning={77,114,232,217,78,84,85},day={77,114,232,217,78,84,85},night={77,114,232,217,215,78}} },
     { id="FR_VIRIDIAN_FOREST", habitat="forest", min=3, max=8, gen=4, base={morning={10,11,12,13,14,15,16,17,172,325,322,406,455},day={10,11,13,14,16,17,172,325,322,406,455},night={163,172,325,322,406,455}} },
     { id="FR_PATTERN_BUSH", habitat="forest", min=42, max=50, gen=4, base={
-      morning={12,15,166,193,214,267,284,313,314,402,416,469},
-      day={12,15,123,127,193,212,214,267,284,291,313,314,416,469},
-      night={49,168,193,205,214,269,284,292,402,414,469}
+      morning={12,15,166,214,267,284,416,469},
+      day={12,123,127,214,212,291,416,469},
+      night={49,168,214,205,269,284,414,469}
     } },
     { id="FR_DIGLETTS_CAVE", habitat="cave", min=13, max=29, gen=4, base={morning={50,51},day={50,51},night={50,51}} },
     { id="FR_MT_MOON_1F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,28,35},day={41,74,27,46,28,35},night={41,74,27,46,28,35}} },
