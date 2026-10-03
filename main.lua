@@ -2327,7 +2327,6 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
     end
 
     mod.events:on("map.entered", function(ev)
-      refreshPeriod()
       local enteredSession = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
       if enteredSession and enteredSession.map == CRESSELIA_MAP then
         mysticTicketState(enteredSession).cresseliaAttemptedThisVisit = false
@@ -2340,6 +2339,16 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       showRegigigas()
       showHeatran()
       tryTicketEvents()
+      refreshPeriod()
+      -- refreshPeriod may invalidate/rebind the live map on a period change.
+      -- Reinstall synthetic stationary actors after that destructive step.
+      showTowerDarkrai()
+      showCresselia()
+      showRegice()
+      showRegisteel()
+      showRegirock()
+      showRegigigas()
+      showHeatran()
     end)
     -- Sevii/native map imports can perform a same-map rebind after map.entered.
     -- Objects.loadMap() rebuilds _byId/_order during that rebind, which erases
