@@ -41,10 +41,10 @@ return function(mod)
   -- The base entries mirror recognizable HGSS Kanto encounters. The
   -- generated entries add Gen 1-4 habitat coverage around those anchors.
   local PROFILES = {
-    { id="FR_ROUTE_1", habitat="field", min=2, max=6, gen=1, base={morning={16,19,161,162},day={16,19,161,162},night={19,163}} },
-    { id="FR_ROUTE_2", habitat="forest", min=3, max=10, gen=1, base={morning={10,16,11,12,17,167,165,14,13,15,166},day={16,10,12,17,13,15,165},night={163,167,168,14,13,15}} },
-    { id="FR_ROUTE_3", habitat="field", min=5, max=10, gen=1, base={morning={21,19,23,39,24},day={21,19,23,39,24},night={19,41,23,39,24}} },
-    { id="FR_ROUTE_4", habitat="mountain", min=5, max=10, gen=1, base={morning={21,19,23,39,24},day={21,19,23,39,24},night={19,41,23,39,24}} },
+    { id="FR_ROUTE_1", habitat="field", min=2, max=6, gen=1, base={morning={16,19,161,161},day={16,19,161,161},night={19,163}} },
+    { id="FR_ROUTE_2", habitat="forest", min=3, max=10, gen=1, base={morning={10,16,11,17,167,165,14,13},day={16,10,17,13,165},night={163,167,14,13}} },
+    { id="FR_ROUTE_3", habitat="field", min=5, max=10, gen=1, base={morning={21,19,23,39},day={21,19,23,39},night={19,41,23,39}} },
+    { id="FR_ROUTE_4", habitat="mountain", min=5, max=10, gen=1, base={morning={21,19,23,39},day={21,19,23,39},night={19,41,23,39}} },
     { id="FR_ROUTE_5", habitat="urban", min=12, max=15, gen=2, base={morning={16,69,52,63},day={16,69,52,63},night={43,52,69,44,63}} },
     { id="FR_ROUTE_6", habitat="field", min=12, max=16, gen=2, base={morning={16,69,43,63},day={16,69,52,63},night={19,52,163,200}} },
     { id="FR_ROUTE_7", habitat="urban", min=15, max=19, gen=2, base={morning={19,21,58,20,52,37,53},day={19,21,58,20,52,37,53},night={198,19,58,20,228,52,37,53}} },
@@ -74,10 +74,10 @@ return function(mod)
       night={49,168,214,205,269,284,414,469}
     } },
     { id="FR_DIGLETTS_CAVE", habitat="cave", min=13, max=29, gen=4, base={morning={50,51},day={50,51},night={50,51}} },
-    { id="FR_MT_MOON_1F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,28,35},day={41,74,27,46,28,35},night={41,74,27,46,28,35}} },
-    { id="FR_MT_MOON_B1F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,28,35},day={41,74,27,46,28,35},night={41,74,27,46,28,35}} },
-    { id="FR_MT_MOON_B2F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,28,35},day={41,74,27,46,28,35},night={41,74,27,46,28,35}} },
-    { id="FR_ROCK_TUNNEL_1F", habitat="cave", min=8, max=14, gen=4, base={morning={104,74,66,41,67,296,436,433},day={104,74,66,41,67,296,436,433},night={104,74,66,41,67,296,436,433}} },
+    { id="FR_MT_MOON_1F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,35},day={41,74,27,46,35},night={41,74,27,46,35}} },
+    { id="FR_MT_MOON_B1F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,35},day={41,74,27,46,35},night={41,74,27,46,35}} },
+    { id="FR_MT_MOON_B2F", habitat="cave", min=6, max=12, gen=4, base={morning={41,74,27,46,35},day={41,74,27,46,35},night={41,74,27,46,35}} },
+    { id="FR_ROCK_TUNNEL_1F", habitat="cave", min=8, max=14, gen=4, base={morning={104,74,66,41,296,436,433},day={104,74,66,41,296,436,433},night={104,74,66,41,296,436,433}} },
     { id="FR_ROCK_TUNNEL_B1F", habitat="cave", min=10, max=16, gen=4, base={morning={74,104,95,41,105,115,296,436,433},day={74,104,95,41,105,115,296,436,433},night={74,104,95,41,105,115,296,436,433}} },
     { id="FR_POWER_PLANT", habitat="electric", min=20, max=35, gen=4, base={morning={81,100,25,125},day={81,100,25,125},night={81,100,125,479}} },
     { id="FR_POKEMON_TOWER_3F", habitat="ghost", min=22, max=30, gen=2, base={morning={92,93,200,355},day={92,93,200,355},night={92,93,200,355}} },
