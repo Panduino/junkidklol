@@ -1,7 +1,7 @@
 {
   "id": "g9_gen3_battle_sprites",
   "name": "G9 Battle Sprites - Gen 3",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
@@ -10,7 +10,6 @@
   "game_version": ">=0.3.14",
   "priority": 275,
   "permissions": ["engine_internals"],
-  "dependencies": ["g9-battle-sprites"],
   "optional_dependencies": ["national_dex_gen3"],
-  "description": "FireRed/LeafGreen renderer adapter for G9 Battle Sprites, including National Dex Gen 3 species."
+  "description": "FireRed/LeafGreen renderer adapter that consumes an installed G9 Battle Sprites release even though G9 itself is not active on Gen 3."
 }
