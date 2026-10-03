@@ -168,7 +168,10 @@ return function(mod)
     -- be larger. These are scene headroom limits, not target sprite sizes.
     local maxW = back and 112 or 96
     local maxH = back and 104 or 88
-    local scale = math.min(1, maxW / cw, maxH / ch)
+    -- Back sprites sit much closer to the camera in G9. Allow small backs to
+    -- grow instead of permanently capping every trimmed sheet at 1:1.
+    local naturalScale = back and 1.5 or 1
+    local scale = math.min(naturalScale, maxW / cw, maxH / ch)
     local dw = math.max(1, math.floor(cw * scale + 0.5))
     local dh = math.max(1, math.floor(ch * scale + 0.5))
     local frames = {}
@@ -234,10 +237,14 @@ return function(mod)
     -- own per-species FrontSprite Y metric, so short/low-bodied species are
     -- lowered individually instead of moving every enemy by the same amount.
     imageMeta[img] = {
-      ox = back and -20 or 0,
-      -- DBK metrics are authored for G9's own scene.  Gen 3 already supplies
-      -- the base battler Y, so use only half of the species correction here.
-      oy = (not back and metric and math.floor(((tonumber(metric.fy) or 0) * 0.5) + 0.5)) or 0,
+      -- Keep the scene correction, but also respect G9's authored back
+      -- placement instead of centering every species identically.
+      ox = back
+        and (-20 + math.floor(((metric and tonumber(metric.bx)) or 0) * 0.5 + 0.5))
+        or 0,
+      oy = back
+        and math.floor(((metric and tonumber(metric.by)) or 0) * 0.5 + 0.5)
+        or math.floor((((metric and tonumber(metric.fy)) or 0) * 0.5) + 0.5),
     }
     return { image = img, w = w, h = h, trueColor = true, g9Gen3 = true, g9Back = back }
   end
