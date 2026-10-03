@@ -245,7 +245,7 @@ return function(mod)
       -- Keep the scene correction, but also respect G9's authored back
       -- placement instead of centering every species identically.
       ox = back
-        and (-28 + math.floor(((metric and tonumber(metric.bx)) or 0) * 0.5 + 0.5))
+        and (-22 + math.floor(((metric and tonumber(metric.bx)) or 0) * 0.5 + 0.5))
         or 2,
       -- Natural G9 fronts are grounded by their trimmed bottom edge, then use
       -- G9's per-species front Y metric. FireRed's centre-origin draw needs the
@@ -253,7 +253,7 @@ return function(mod)
       oy = back
         -- Player platform contact point in the authored 240x135 background is
         -- Shift the player/back battler another 12 px left from the authored platform
-        -- anchor to open space between it and the right-side HUD: -28,-6
+        -- anchor to open space between it and the right-side HUD: -22,-6
         -- while retaining G9's species-specific back metric.
         and (function()
           -- Preserve the proven-good G9 back placement range (Bidoof is
