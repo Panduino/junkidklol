@@ -405,8 +405,19 @@ return function(mod)
             ox = iw * 0.5
             oy = ih * 0.5
           else
-            -- Exact e44e927 front draw behavior: only apply our scene offset.
-            -- Leave FireRed's supplied scale and native 32,32 origin untouched.
+            -- Keep the known-good e44e927 front bake and scale untouched, but
+            -- anchor the trimmed G9 image by its real centre like the backs.
+            -- Compensate x/y for FireRed's old 32,32-style origin first, so
+            -- changing the origin does not change the established placement.
+            local iw, ih = drawable:getDimensions()
+            local baseSx = sx or 1
+            local baseSy = sy or baseSx
+            local nativeOx = tonumber(ox) or 32
+            local nativeOy = tonumber(oy) or 32
+            x = (x or 0) + (iw * 0.5 - nativeOx) * baseSx
+            y = (y or 0) + (ih * 0.5 - nativeOy) * baseSy
+            ox = iw * 0.5
+            oy = ih * 0.5
           end
         end
         return realDraw(drawable, x, y, r, sx, sy, ox, oy, ...)
