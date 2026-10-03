@@ -1653,6 +1653,114 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       return true
     end
 
+    -- Manaphy / Phione: after becoming Champion, the Route 5 Day Care man
+    -- gives one genuine Manaphy Egg. Manaphy + Ditto then produces Phione
+    -- through the normal two-parent Day Care breeding system.
+    local MANAPHY_NAT, PHIONE_NAT = 490, 489
+    local MANAPHY_SPECIES, PHIONE_SPECIES = MANAPHY_NAT + 64, PHIONE_NAT + 64
+    local ROUTE5_DAYCARE = "FR_ROUTE_5_POKEMON_DAY_CARE"
+    local manaphyGiftBusy = false
+
+    local function manaphyState(session)
+      local state = darkraiState(session)
+      return state
+    end
+
+    local function partyHasSpace(session)
+      local n = 0
+      for i = 1, 6 do if session.party and session.party[i] then n = n + 1 end end
+      return n < 6
+    end
+
+    local function giveManaphyEgg(session)
+      if not session or not partyHasSpace(session) then return false end
+      local Breeding = require("src.core.game3.breeding")
+      local Daycare = require("src.core.game3.daycare")
+      local egg = Breeding.createEgg(session, MANAPHY_SPECIES, false)
+      if not egg then return false end
+      egg.isEgg = true
+      session.party = session.party or {}
+      session.party[6] = egg
+      Daycare.compactParty(session)
+      manaphyState(session).manaphyEggReceived = true
+      return true
+    end
+
+    -- Expansion species metadata correctly marks Manaphy as normally unable to
+    -- breed. Preserve that generally, but allow the canonical Manaphy + Ditto
+    -- pairing and force its offspring species to Phione.
+    local Breeding = require("src.core.game3.breeding")
+    if not Breeding._rtcManaphyPhione then
+      Breeding._rtcManaphyPhione = true
+      local rawCompatibility = Breeding.compatibility
+      Breeding.compatibility = function(dc, ...)
+        local Daycare = require("src.core.game3.daycare")
+        local a = tonumber(Daycare.speciesOf(Daycare.mon(dc, 1))) or 0
+        local b = tonumber(Daycare.speciesOf(Daycare.mon(dc, 2))) or 0
+        if (a == MANAPHY_SPECIES and b == 132) or (b == MANAPHY_SPECIES and a == 132) then
+          return Breeding.PARENTS_MED_COMPATIBILITY
+        end
+        return rawCompatibility(dc, ...)
+      end
+      local rawParentSlots = Breeding.parentSlots
+      Breeding.parentSlots = function(dc, ...)
+        local Daycare = require("src.core.game3.daycare")
+        local a = tonumber(Daycare.speciesOf(Daycare.mon(dc, 1))) or 0
+        local b = tonumber(Daycare.speciesOf(Daycare.mon(dc, 2))) or 0
+        if (a == MANAPHY_SPECIES and b == 132) then return PHIONE_SPECIES, 1, 2 end
+        if (b == MANAPHY_SPECIES and a == 132) then return PHIONE_SPECIES, 2, 1 end
+        return rawParentSlots(dc, ...)
+      end
+    end
+
+    -- Intercept only the Route 5 Day Care man's interaction when the gift is
+    -- actually available. All ordinary Day Care scripting remains untouched.
+    if not Field._rtcManaphyDaycareGift then
+      Field._rtcManaphyDaycareGift = true
+      local rawDaycareInteract = Field.interact
+      Field.interact = function(...)
+        local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
+        if session and session.map == ROUTE5_DAYCARE and session.game_cleared == true
+          and manaphyState(session).manaphyEggReceived ~= true and not manaphyGiftBusy then
+          local P = engine.Player
+          local targetX, targetY = P.cellX, P.cellY
+          if P.facing == "up" then targetY = targetY - 1
+          elseif P.facing == "down" then targetY = targetY + 1
+          elseif P.facing == "left" then targetX = targetX - 1
+          elseif P.facing == "right" then targetX = targetX + 1 end
+          local daycareMan = targetX == 4 and targetY == 4
+          if daycareMan then
+            local Message = require("src.ui.game3.message")
+            manaphyGiftBusy = true
+            engine.Field.locked = true
+            Message.show("Ah, CHAMPION! I've been hoping you'd stop by.", function()
+              Message.show("I found a very unusual POKEMON EGG.", function()
+                Message.show("Something tells me it belongs with a TRAINER like you.", function()
+                  if giveManaphyEgg(session) then
+                    Message.show("{PLAYER} received the mysterious EGG!", function()
+                      Message.show("Take good care of it. I wonder what will hatch...", function()
+                        engine.Field.locked = false
+                        manaphyGiftBusy = false
+                      end)
+                    end)
+                  else
+                    Message.show("Oh! You don't have room for the EGG.", function()
+                      Message.show("Come back when you have space in your party.", function()
+                        engine.Field.locked = false
+                        manaphyGiftBusy = false
+                      end)
+                    end)
+                  end
+                end)
+              end)
+            end)
+            return true
+          end
+        end
+        return rawDaycareInteract(...)
+      end
+    end
+
     local rawTableFor = engine.Encounters.tableFor
     engine.Encounters.tableFor = function(mapId, ...)
       local profile = mapId and PROFILE_BY_ID[mapId]
