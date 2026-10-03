@@ -415,7 +415,7 @@ return function(mod)
             local nativeOx = tonumber(ox) or 32
             local nativeOy = tonumber(oy) or 32
             x = (x or 0) + (iw * 0.5 - nativeOx) * baseSx
-            y = (y or 0) + (ih * 0.5 - nativeOy) * baseSy
+            y = (y or 0) + (ih * 0.5 - nativeOy) * baseSy - 6
             ox = iw * 0.5
             oy = ih * 0.5
           end
