@@ -339,24 +339,20 @@ return function(mod)
       local wh = tonumber(ctx.wh) or love.graphics.getHeight()
       local iw, ih = img:getDimensions()
 
-      -- Let the normal compositor chain run first. This is essential for
-      -- Kanto Gear: its render.compose wrapper refreshes/pushes the lower
-      -- battle UI and its visibility hooks decide what stays on the upper UI.
-      local handled = next(renderer, ctx)
+      -- Paint the authored 16:9 backdrop first. BattleBg.draw has already
+      -- cleared the vanilla terrain/platform layer to transparent, so the
+      -- normal Gen3/Kanto Gear composition can be laid over this image.
+      love.graphics.push("all")
+      love.graphics.origin()
+      love.graphics.setScissor()
+      love.graphics.setBlendMode("alpha")
+      love.graphics.setColor(1, 1, 1, 1)
+      love.graphics.draw(img, 0, 0, 0, ww / iw, wh / ih)
+      love.graphics.pop()
 
-      -- If a downstream compositor took ownership of the physical window,
-      -- do not overwrite it. Otherwise place the authored battle background
-      -- beneath the transparent Gen3 scene without short-circuiting the chain.
-      if handled ~= true then
-        love.graphics.push("all")
-        love.graphics.origin()
-        love.graphics.setScissor()
-        love.graphics.setBlendMode("alpha", "premultiplied")
-        love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.draw(img, 0, 0, 0, ww / iw, wh / ih)
-        love.graphics.pop()
-      end
-      return handled
+      -- Never terminate the compose chain here. Kanto Gear's wrapper needs to
+      -- run to suppress upper-screen battle UI and update the lower display.
+      return next(renderer, ctx)
     end)
   end
 
