@@ -739,12 +739,10 @@ return function(mod)
       end
     end
 
-    local specialIslandSailorInteract
     local rawFieldInteract = Field.interact
     if not Field._fossilDealerInteractInstalled then
       Field.interact = function(game)
         local session = engine.Runtime and engine.Runtime.getSession and engine.Runtime.getSession()
-        if specialIslandSailorInteract and specialIslandSailorInteract(game, session) then return true end
         if labScientistAhead(session) and not Field.isLocked() then
           local state = extraFossilState(session)
           if state.pending then
@@ -898,72 +896,39 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
         end
 
 
-        local function specialIslandOrigin(session)
-          local id = tostring(session and session.map or ""):upper()
-          if id:find("NAVEL_ROCK_HARBOR", 1, true) or id:find("NAVELROCK_HARBOR", 1, true) then return 9 end
-          if id:find("BIRTH_ISLAND_HARBOR", 1, true) or id:find("BIRTHISLAND_HARBOR", 1, true) then return 10 end
-          return nil
-        end
+        local Multichoice = require("src.core.game3.scripting.multichoice")
+        local oldVermilionOverride = Multichoice.OVERRIDES[61]
+        Multichoice.OVERRIDES[61] = function(ctx, row, done)
+          local origin = tonumber(FlagsSea.getVar(SpaceSea.store, ctx, 0x8004)) or 0
+          if origin ~= 9 and origin ~= 10 then
+            if oldVermilionOverride then return oldVermilionOverride(ctx, row, done) end
+            return false
+          end
 
-        specialIslandSailorInteract = function(game, session)
-          local origin = specialIslandOrigin(session)
-          if not origin or Field.isLocked() then return false end
-          local dx, dy = 0, 0
-          local face = Player.facing
-          if face == "up" then dy=-1 elseif face == "down" then dy=1
-          elseif face == "left" then dx=-1 elseif face == "right" then dx=1 end
-          if Player.cellX + dx ~= 8 or Player.cellY + dy ~= 6 then return false end
+          local labels = {"VERMILION", "ONE ISLAND", "TWO ISLAND", "THREE ISLAND",
+            "FOUR ISLAND", "FIVE ISLAND", "SIX ISLAND", "SEVEN ISLAND"}
+          local dests = {0, 1, 2, 3, 4, 5, 6, 7}
+          if origin ~= 9 and hasMysticTicket() then
+            labels[#labels + 1], dests[#dests + 1] = "NAVEL ROCK", 9
+          end
+          if origin ~= 10 and hasAuroraTicket() then
+            labels[#labels + 1], dests[#dests + 1] = "BIRTH ISLAND", 10
+          end
+          labels[#labels + 1], dests[#dests + 1] = "EXIT", 127
 
-          local Adapters = require("src.core.game3.scripting.adapters")
-          local Multichoice = require("src.core.game3.scripting.multichoice")
-          local adapters = Adapters.host(mod, game, game and (game.overworld or game.world))
-          local ctx = SpaceSea.vm and SpaceSea.vm.ctx or nil
-          local MENU_ID = 0xF002
-          Field.lock("special_island_ferry")
-
-          local function sail(dest)
-            if not SpaceSea.vm then
-              Field.unlock("special_island_ferry")
+          local Choice = require("src.ui.game3.choice")
+          Choice.multichoice(labels, function(sel)
+            local dest = dests[(tonumber(sel) or (#dests - 1)) + 1] or 127
+            if dest == 127 then
+              done(1)
               return
             end
-            SpaceSea.vm._presetSpecial = SpaceSea.vm._presetSpecial or {}
-            SpaceSea.vm._presetSpecial[0x8004] = origin
-            SpaceSea.vm._presetSpecial[0x8006] = dest
-            Field.unlock("special_island_ferry")
-            local key = SpaceSea.scriptKey("EventScript_SailToDest")
-            if not key or not SpaceSea.startScript(key) then
-              Field.unlock()
-            end
-          end
-
-          local function choose(page)
-            local labels, dests = {}, {}
-            if page == 0 then
-              labels = {"VERMILION", "ONE ISLAND", "TWO ISLAND", "THREE ISLAND", "OTHER", "EXIT"}
-              dests = {0, 1, 2, 3, 254, 127}
-            elseif page == 1 then
-              labels = {"FOUR ISLAND", "FIVE ISLAND", "SIX ISLAND", "SEVEN ISLAND", "OTHER", "EXIT"}
-              dests = {4, 5, 6, 7, 254, 127}
-            else
-              if origin ~= 9 and hasMysticTicket() then labels[#labels+1], dests[#dests+1] = "NAVEL ROCK", 9 end
-              if origin ~= 10 and hasAuroraTicket() then labels[#labels+1], dests[#dests+1] = "BIRTH ISLAND", 10 end
-              labels[#labels+1], dests[#dests+1] = "OTHER", 254
-              labels[#labels+1], dests[#dests+1] = "EXIT", 127
-            end
-            Multichoice.LISTS[MENU_ID] = {labels=labels, count=#labels}
-            adapters.multichoice({op="multichoice",[1]=17,[2]=2,[3]=MENU_ID,[4]=0}, function(sel)
-              local dest = dests[(tonumber(sel) or 127) + 1] or 127
-              if dest == 254 then
-                choose((page + 1) % 3)
-              elseif dest == 127 then
-                Field.unlock("special_island_ferry")
-              else
-                sail(dest)
-              end
-            end)
-          end
-
-          Message.show("Where do you want to sail?", function() choose(0) end)
+            FlagsSea.setVar(SpaceSea.store, ctx, 0x8006, dest)
+            -- The stock event-island script only has two switch cases:
+            -- result 0 sails to Vermilion. Keep that branch, but redirect
+            -- its destination variable before the native sail script runs.
+            done(0)
+          end)
           return true
         end
       end
