@@ -1660,6 +1660,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
       { nat=379, species=379, map="FR_FIVE_ISLAND_ROCKET_WAREHOUSE", x=13, y=8, id=124, tick=7 }, -- Registeel
       { nat=377, species=377, map="FR_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER", x=11, y=8, id=125, tick=14 }, -- Regirock
       { nat=486, species=550, map="FR_SIX_ISLAND_DOTTED_HOLE_SAPPHIRE_ROOM", x=7, y=7, id=128, tick=5, requiresRegis=true }, -- Regigigas
+      { nat=485, species=549, map="FR_MT_EMBER_SUMMIT_PATH_2F", x=24, y=22, id=129, tick=11 }, -- Heatran
     }
     local regiActors, regiBusy = {}, false
 
@@ -1735,7 +1736,7 @@ local FLAG_SHOWN_MYSTIC_TICKET = 0x2F0
           elseif P.cellY < actor.cellY then P.facing = "down"
           else P.facing = "up" end
           clearRegiActor(def)
-          mod.world:startWildBattle(def.species, def.nat == 486 and 70 or 50, function()
+          mod.world:startWildBattle(def.species, (def.nat == 486 or def.nat == 485) and 70 or 50, function()
             engine.Field.locked = false
             regiBusy = false
             showRegis()
